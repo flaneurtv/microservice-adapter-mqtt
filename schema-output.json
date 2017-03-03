@@ -1,0 +1,22 @@
+{
+  "topic": "TOPICROOT/channel/CHANNELUUID/playout/PLAYOUTUUID/playlist",
+  "service_uuid": "SERVICEUUID",
+  "service_name": "SERVICENAME",
+  "service_host": "SERVICEHOST",
+  "created_at": "CREATEDAT",
+  "tick_reference": "TICKUUID",
+  "payload": {
+    "playlist":{
+      "channel_uuid":"CHANNELUUID",
+      "playout_uuid":"PLAYOUTUUID",
+      "playlist_number": PLAYLISTNUMBER,
+      "index": INDEX,
+      "filename": "FILENAME",
+      "in": IN,
+      "out": OUT,
+      "length": LENGHT,
+      "calculated_length": CALCULATEDLENGHT,
+      "fps": FPS
+    }
+  }
+}

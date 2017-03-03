@@ -1,0 +1,21 @@
+{
+  "name": "mqtt-service-adapter",
+  "version": "0.0.1",
+  "main": "mqtt-service-adapter.js",
+  "private": true,
+  "scripts": {
+	    "start": "node mqtt-service-adapter.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/flaneurtv/mqtt-service-adapter"
+  },
+  "author": "Markus Kienast",
+  "license": "proprietary",
+  "homepage": "https://bitbucket.org/flaneurtv/mqtt-service-adapter#readme",
+  "dependencies": {
+    "mqtt": "^1.10.0",
+    "uuid": "",
+    "trim": ""
+  }
+}
