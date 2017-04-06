@@ -55,7 +55,7 @@ mqtt_client.on('message', function(topic, message) {
             if (error) {
                 console.log("event => ERROR: ", error);
             }
-            // Checks topic_message exists on subscriptions.txt
+            // Checks topic_message does not exists on subscriptions.txt
             if (data.indexOf(topic_message) <= 0){
                 // Subscribe to new topic
                 mqtt_client.subscribe(topic_message);
