@@ -2,7 +2,5 @@
 
 ### docker run ###
 ```
-docker run \
--e HOST_UUID=uuid -e SERVICE_UUID=uuid -e SERVICE_NAME=string -e CHANNEL_UUID=uuid -e PLAYOUT_UUID \
-flaneurtv/mqtt-service-playlist-checker
+docker rm -f tusd-hooks ; clear ; docker run -it --name tusd-hooks -v $HOME/tusd-upload:/srv/tusd-data -v $HOME/www/tusd-hooks-docker/local:/run/secrets -p 1080:1080 -v $PWD/hooks:/srv/tusd-hooks --link mqtt flaneurtv/tusd-hooks
 ```
