@@ -9,14 +9,14 @@
     "playlist":{
       "channel_uuid":"CHANNELUUID",
       "playout_uuid":"PLAYOUTUUID",
-      "playlist_number": PLAYLISTNUMBER,
-      "index": INDEX,
+      "playlist_number": "PLAYLISTNUMBER",
+      "index": "INDEX",
       "filename": "FILENAME",
-      "in": IN,
-      "out": OUT,
-      "length": LENGHT,
-      "calculated_length": CALCULATEDLENGHT,
-      "fps": FPS
+      "in": "IN",
+      "out": "OUT",
+      "length": "LENGHT",
+      "calculated_length": "CALCULATEDLENGHT",
+      "fps": "FPS"
     }
   }
 }
