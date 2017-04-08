@@ -50,19 +50,19 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
 
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
-    console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: ' + message.toString().trim());
+    console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
 mqtt_listener.on("connect", (connack) => {
-    console.log("event => MQTT listener connected to: " + mqtt_listener_url_object.href);
+    console.log('event => MQTT listener connected to: "' + mqtt_listener_url_object.href + '"');
     // Checks subscriptions of ENV
     if (mqtt_subscriptions !== null) {
         // Splits subscriptions by ; and then subscribes
         var arr = mqtt_subscriptions.split(";");
         for(var i = 0; i < arr.length; i++) {
             mqtt_listener.subscribe(arr[i]);
-            console.log("event => Topic subscribed: " + arr[i]);
+            console.log('event => Topic subscribed: "' + arr[i] + '"');
         }
     }
 });
@@ -74,12 +74,12 @@ mqtt_listener.on("error", function(error) {
 
 // Prints when MQTT listener bus is offline
 mqtt_listener.on("offline", function() {
-    console.log("event => MQTT Listener Server offline: " + mqtt_listener_url_object.href);
+    console.log('event => MQTT Listener Server offline: "' + mqtt_listener_url_object.href + '"');
 });
 
 // Prints when MQTT listener had to reconnect
 mqtt_listener.on("reconnect", function() {
-    console.log("event => Trying to reconnect to listener in: " + mqtt_listener_url_object.href);
+    console.log('event => Trying to reconnect to listener in: "' + mqtt_listener_url_object.href + '"');
 });
 
 
@@ -89,7 +89,7 @@ mqtt_listener.on("reconnect", function() {
 
 // Prints when connected to MQTT publisher
 mqtt_publisher.on("connect", (connack) => {
-    console.log("event => MQTT publisher connected to: " + mqtt_publisher_url_object.href);
+    console.log('event => MQTT publisher connected to: "' + mqtt_publisher_url_object.href + '"');
 });
 
 // Prints error messages on the MQTT bus
@@ -99,12 +99,12 @@ mqtt_publisher.on("error", function(error) {
 
 // Prints when MQTT bus is offline
 mqtt_publisher.on("offline", function() {
-    console.log("event => MQTT Publisher Server offline: " + mqtt_publisher_url_object.href);
+    console.log('event => MQTT Publisher Server offline: "' + mqtt_publisher_url_object.href + '"');
 });
 
 // Prints when MQTT had to reconnect
 mqtt_publisher.on("reconnect", function() {
-    console.log("event => Trying to reconnect to publisher in: " + mqtt_publisher_url_object.href);
+    console.log('event => Trying to reconnect to publisher in: "' + mqtt_publisher_url_object.href + '"');
 });
 
 
