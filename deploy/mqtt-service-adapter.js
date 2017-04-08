@@ -4,14 +4,23 @@ var uuid = require('uuid');
 var mqtt = require('mqtt');
 var readline = require('readline');
 var fs = require('fs');
-var mqtt_url_object = url.parse("tcp://mqtt:1883");
-var subscriptions_txt = './deploy/subscriptions.txt';
 
-// Prints MQTT url object
-console.log('\n' + 'info => mqtt_url parsed:' + JSON.stringify(mqtt_url_object) + '\n');
+// importing all necessary ENV vars
+var namespace = process.env.NAMESPACE || "";
+var service_processor = process.env.SERVICE_PROCESSOR || "./service-processor/processor.sh";
+var service_name = process.env.SERVICE_NAME || "";
+var service_uuid = process.env.SERVICE_UUID || "";
+var service_host = process.env.SERVICE_HOST || "";
+var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
+var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
+var mqtt_subscriptions = process.env.MQTT_SUBSCRIPTIONS || "";
 
-// Connection for MQTT bus
-const mqtt_client = mqtt.connect(mqtt_url_object, {
+// Prints MQTT listener/publisher url object
+// console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
+// console.log('info: mqtt_publisher_url parsed:' + JSON.stringify(mqtt_publisher_url_object));
+
+// Connection for MQTT bus listener
+var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
     // username: "type1tv",
     // password: "nuesse",
     // will: {
@@ -20,107 +29,86 @@ const mqtt_client = mqtt.connect(mqtt_url_object, {
     // }
 });
 
-// Prints when connected to MQTT
-mqtt_client.on('connect', (connack) => {
-    console.log('event => MQTT connected');
+// Connection for MQTT bus publisher
+if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
+    var mqtt_publisher = mqtt_listener;
+} else {
+    var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
+        // username: "type1tv",
+        // password: "nuesse",
+        // will: {
+        //     topic: namespace + "log",
+        //     payload: "{service: " + service_name + ", event: 'last will'}"
+        // }
+    });
+}
+
+
+/**
+ * Events for MQTT listener
+ */
+
+// Listen to messages on the MQTT bus
+mqtt_listener.on("message", function(topic, message) {
+    console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: ' + message.toString().trim());
+});
+
+// Prints when connected to MQTT listener then makes subscriptions
+mqtt_listener.on("connect", (connack) => {
+    console.log("event => MQTT listener connected to: " + mqtt_listener_url_object.href);
+    // Checks subscriptions of ENV
+    if (mqtt_subscriptions !== null) {
+        // Splits subscriptions by ; and then subscribes
+        var arr = mqtt_subscriptions.split(";");
+        for(var i = 0; i < arr.length; i++) {
+            mqtt_listener.subscribe(arr[i]);
+            console.log("event => Topic subscribed: " + arr[i]);
+        }
+    }
+});
+
+// Prints error messages on the MQTT listener bus
+mqtt_listener.on("error", function(error) {
+    console.log("event => ERROR listener: ", error);
+});
+
+// Prints when MQTT listener bus is offline
+mqtt_listener.on("offline", function() {
+    console.log("event => MQTT Listener Server offline: " + mqtt_listener_url_object.href);
+});
+
+// Prints when MQTT listener had to reconnect
+mqtt_listener.on("reconnect", function() {
+    console.log("event => Trying to reconnect to listener in: " + mqtt_listener_url_object.href);
+});
+
+
+/**
+ * Events for MQTT publisher
+ */
+
+// Prints when connected to MQTT publisher
+mqtt_publisher.on("connect", (connack) => {
+    console.log("event => MQTT publisher connected to: " + mqtt_publisher_url_object.href);
 });
 
 // Prints error messages on the MQTT bus
-mqtt_client.on("error", function(error) {
-    console.log("event => ERROR: ", error);
+mqtt_publisher.on("error", function(error) {
+    console.log("event => ERROR publisher: ", error);
 });
 
 // Prints when MQTT bus is offline
-mqtt_client.on('offline', function() {
-    console.log("event => MQTT Server offline");
+mqtt_publisher.on("offline", function() {
+    console.log("event => MQTT Publisher Server offline: " + mqtt_publisher_url_object.href);
 });
 
 // Prints when MQTT had to reconnect
-mqtt_client.on('reconnect', function() {
-    console.log("event => Trying to reconnect...");
+mqtt_publisher.on("reconnect", function() {
+    console.log("event => Trying to reconnect to publisher in: " + mqtt_publisher_url_object.href);
 });
 
-// Listen to messages on the MQTT bus
-mqtt_client.on('message', function(topic, message) {
-
-    var topic_message = message.toString().trim();
-
-    console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: ' + topic_message);
-
-    // Service Adapter Subscribe topic
-    // IMPORTANT: should publish to flaneur/mqtt_service_adapter/add_topic and the message should be the new topic.
-    // New topics are appended automatically to subscriptions.txt
-    if (topic === 'flaneur/mqtt_service_adapter/add_topic') {
-        fs.readFile(subscriptions_txt, 'utf8', function (error, data) {
-            if (error) {
-                console.log("event => ERROR: ", error);
-            }
-            // Checks topic_message does not exists on subscriptions.txt
-            if (data.indexOf(topic_message) <= 0){
-                // Subscribe to new topic
-                mqtt_client.subscribe(topic_message);
-                // Append new topic into subscriptions.txt
-                fs.appendFile(subscriptions_txt, topic_message + '\n', function (error) {
-                    if (error) {
-                        return console.log("event => ERROR: ", error);
-                    }
-                    console.log("event => Topic subscribed: " + topic_message);
-                });
-            } else {
-                console.log("event => ERROR: Topic already subscribed");
-            }
-        });
-    }
-
-    // Service Adapter Unsubscribe topic
-    // IMPORTANT: should publish to flaneur/mqtt_service_adapter/remove_topic and the message should be the topic to be removed.
-    // Topics are removed automatically in subscriptions.txt
-    if (topic === 'flaneur/mqtt_service_adapter/remove_topic') {
-        // Unsubscribe from MQTT and removes topic in subscriptions.txt
-        fs.readFile(subscriptions_txt, 'utf8', function (error, data) {
-            if (error) {
-                console.log("event => ERROR: ", error);
-            }
-            // Checks topic_message exists on subscriptions.txt
-            if (data.indexOf(topic_message) >= 0){
-                // Unsubscribe to topic
-                mqtt_client.unsubscribe(topic_message);
-                // removes topic from subscriptions.txt file
-                var fileData = data.toString();
-                fileData = fileData.replace(topic_message, "");
-                // removes empty lines from subscriptions.txt file
-                fileData = fileData.replace(/^\s*[\r\n]/gm, "");
-                fs.writeFile(subscriptions_txt, fileData, 'utf8', function (error) {
-                    if (error) {
-                        console.log("event => ERROR: ", error);
-                    }
-                    console.log("event => Topic unsubscribed: " + topic_message);
-                });
-            } else {
-                console.log("event => ERROR: Topic does not exists");
-            }
-        });
-    }
-
-});
-
-// Reads file subscriptions.txt line by line for MQTT topics the adapter should be subscribed to
-var rl = readline.createInterface({
-    input: fs.createReadStream(subscriptions_txt)
-});
-
-// With each line of subscriptions.txt create a subscription for the adapter
-rl.on('line', function(line) {
-    // checks it´s not an empty line
-    if (line !== '') {
-        // Subscribe to topic
-        mqtt_client.subscribe(line);
-        console.log("event => Topic subscribed: " + line);
-    }
-});
 
 // Sends test after 1 second (1000ms)
-setTimeout(function(){
-    var namespace = 'flaneur/tusd/upload_success';
-    mqtt_client.publish(namespace, 'test ok');
+setTimeout(function() {
+    mqtt_publisher.publish("flaneur/tusd/upload_success", "test ok");
 }, 1000);
