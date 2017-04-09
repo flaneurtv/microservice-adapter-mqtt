@@ -4,6 +4,7 @@ var uuid = require('uuid');
 var mqtt = require('mqtt');
 var readline = require('readline');
 var fs = require('fs');
+var child_process = require('child_process');
 
 // importing all necessary ENV vars
 var namespace = process.env.NAMESPACE || "";
@@ -51,6 +52,18 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
+
+    // Forwards message to processor
+    sp = child_process.spawn(service_processor);
+    sp.stdin.write(message.toString().trim() + '\n');
+
+    // Processor stdout response, publish response
+    sp.stdout.on('data', function (data) {
+        // console.log(data.toString());
+        processor_stdout_message = JSON.parse(data);
+        mqtt_publisher.publish(processor_stdout_message.topic, data.toString());
+    });
+
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
@@ -110,5 +123,16 @@ mqtt_publisher.on("reconnect", function() {
 
 // Sends test after 1 second (1000ms)
 setTimeout(function() {
-    mqtt_publisher.publish("flaneur/tusd/upload_success", "test ok");
+    mqtt_publisher.publish("flaneur/tusd/upload_success", JSON.stringify(
+        {
+            "topic": "flaneur/tusd/upload_success",
+            "service_uuid": "SERVICEUUID",
+            "service_name": "SERVICENAME",
+            "service_host": "SERVICEHOST",
+            "created_at": "CREATEDAT",
+            "payload": {
+                "tick_uuid": "TICKUUID"
+            }
+        })
+    );
 }, 1000);
