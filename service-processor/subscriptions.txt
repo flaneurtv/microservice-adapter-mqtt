@@ -1,4 +1,2 @@
-flaneur/mqtt_service_adapter/add_topic
-flaneur/mqtt_service_adapter/remove_topic
-flaneur/tusd/upload_success
-flaneur/tusd/upload_error
+/tusd/upload_success
+/tick
