@@ -19,11 +19,69 @@ var service_name = pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
 var service_host = os.hostname(); // equals the docker container ID
 
+// start the processor
+// console.log('info: spawning processor: ' + service_processor);
+// const processor = child_process.spawn(service_processor, []);
+// const processor_stdout = readline.createInterface({ input: processor.stdout});
+// const processor_stderr = readline.createInterface({ input: processor.stderr});
+
+// Processor stdout is published on MQTT if connected and valid JSON
+// If MQTT is not connected, lines are dropped to avoid late messages
+// processor_stdout.on('line', (line) => {
+//     if (JSON.parse(line) && mqtt_publisher.connected === true) {
+//         line = line.trim();
+//         processor_stdout_message = JSON.parse(line);
+//         mqtt_publisher.publish(processor_stdout_message.topic, line);
+//         console.log('processor_stdout_message: ' + line);
+//     }
+// });
+
+// Processor stderr is forwarded to log line by line
+// QUESTION: I am unsure whether to forward to parent stderr or to stdout via
+// log facility
+// processor_stderr.on('line', (line) => {
+//     if (line !== null) {
+//         line = line.trim();
+//         console.log('processor_stderr_message: ' + line);
+//     }
+// });
+
+// FIXME: define proper log messages to publish on MQTT
+// rl.on('close', () => {
+//     console.log('event: Readline CLOSE event emitted');
+//     if (mqtt_publisher.connected === true) {
+//         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
+//     }
+//     rl.close();
+//     mqtt_publisher.end();
+//     mqtt_listener.end();
+// });
+
+// FIXME: define proper log messages to publish on MQTT
+// FIXME: make sure node exits gracefully on processor termination
+// rl.on('SIGINT', () => {
+//     console.log('event: Readline SIGINT event emitted');
+//     if (mqtt_publisher.connected === true) {
+//         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
+//     }
+//     rl.close();
+//     mqtt_publisher.end();
+//     mqtt_listener.end();
+// });
+//
+// processor.on('close', (code) => {
+//     console.log(`child process exited with code ${code}`);
+// });
+
 // Prints MQTT listener/publisher url object
 // console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
 // console.log('info: mqtt_publisher_url parsed:' + JSON.stringify(mqtt_publisher_url_object));
 
 // Connection for MQTT bus listener
+// FIXME: the login credentials shall be read from
+// /run/secrets/mqtt_publisher.json and
+// /run/secrets/mqtt_listener.json
+// If you have a more meaningful name, please tell me.
 var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
     // username: "type1tv",
     // password: "nuesse",
@@ -74,6 +132,11 @@ mqtt_listener.on("message", function(topic, message) {
         processor_stdout_message = JSON.parse(data);
         mqtt_publisher.publish(processor_stdout_message.topic, data.toString());
     });
+
+    // Forwards message to processor
+    // if (processor.connected) {
+    //     processor.stdin.write(message.toString().trim() + '\n');
+    // }
 
 });
 
