@@ -1,10 +1,10 @@
 {
-  "topic": "flaneur/tick",
-  "service_uuid": "SERVICEUUID",
-  "service_name": "SERVICENAME",
-  "service_host": "SERVICEHOST",
-  "created_at": "CREATEDAT",
+  "topic": "$NAMESPACE/tick",
+  "service_uuid": "$SERVICE_UUID",
+  "service_name": "$SERVICE_NAME",
+  "service_host": "$SERVICE_HOST",
+  "created_at": "$CREATED_AT",
   "payload": {
-    "tick_uuid": "TICKUUID"
+    "tick_uuid": "$TICK_UUID"
   }
 }

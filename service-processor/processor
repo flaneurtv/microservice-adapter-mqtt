@@ -10,7 +10,7 @@ message=$( jq -r  '.message' <<< "${stdin_msg}" )
 
 # if topic is "flaneur/tick" and message is "tick" then send to stdout a tock
 if [ $topic == "flaneur/tick" ] && [ $message == "tick" ]; then
-    topic="flaneur/tick"
+    topic="flaneur/log"
     tick_reply="tock"
     printf '{"topic": "%s", "message": "%s"}\n' "$topic" "$tick_reply"
 fi

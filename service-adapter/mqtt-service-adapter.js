@@ -12,66 +12,66 @@ var subscriptions_txt = './service-processor/subscriptions.txt';
 
 // importing all necessary ENV vars
 var namespace = process.env.NAMESPACE || "";
-var service_processor = "./service-processor/processor";
-var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
-var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 var service_name = pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
 var service_host = os.hostname(); // equals the docker container ID
+var service_processor = "./service-processor/processor";
+var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
+var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
 // start the processor
-// console.log('info: spawning processor: ' + service_processor);
-// const processor = child_process.spawn(service_processor, []);
-// const processor_stdout = readline.createInterface({ input: processor.stdout});
-// const processor_stderr = readline.createInterface({ input: processor.stderr});
+console.log('info: spawning processor: ' + service_processor);
+const processor = child_process.spawn(service_processor, []);
+const processor_stdout = readline.createInterface({ input: processor.stdout});
+const processor_stderr = readline.createInterface({ input: processor.stderr});
 
 // Processor stdout is published on MQTT if connected and valid JSON
 // If MQTT is not connected, lines are dropped to avoid late messages
-// processor_stdout.on('line', (line) => {
-//     if (JSON.parse(line) && mqtt_publisher.connected === true) {
-//         line = line.trim();
-//         processor_stdout_message = JSON.parse(line);
-//         mqtt_publisher.publish(processor_stdout_message.topic, line);
-//         console.log('processor_stdout_message: ' + line);
-//     }
-// });
+processor_stdout.on('line', (line) => {
+    if (JSON.parse(line) && mqtt_publisher.connected === true) {
+        line = line.trim();
+        processor_stdout_message = JSON.parse(line);
+        mqtt_publisher.publish(processor_stdout_message.topic, line);
+        console.log('processor_stdout_message: ' + line);
+    }
+});
 
 // Processor stderr is forwarded to log line by line
 // QUESTION: I am unsure whether to forward to parent stderr or to stdout via
 // log facility
-// processor_stderr.on('line', (line) => {
-//     if (line !== null) {
-//         line = line.trim();
-//         console.log('processor_stderr_message: ' + line);
-//     }
-// });
+processor_stderr.on('line', (line) => {
+    if (line !== null) {
+        line = line.trim();
+        console.log('processor_stderr_message: ' + line);
+    }
+});
 
 // FIXME: define proper log messages to publish on MQTT
-// rl.on('close', () => {
+// processor_stdout.on('close', () => {
 //     console.log('event: Readline CLOSE event emitted');
 //     if (mqtt_publisher.connected === true) {
 //         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
 //     }
-//     rl.close();
+//     processor_stdout.close();
 //     mqtt_publisher.end();
 //     mqtt_listener.end();
 // });
 
 // FIXME: define proper log messages to publish on MQTT
 // FIXME: make sure node exits gracefully on processor termination
-// rl.on('SIGINT', () => {
+// processor_stdout.on('SIGINT', () => {
 //     console.log('event: Readline SIGINT event emitted');
 //     if (mqtt_publisher.connected === true) {
 //         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
 //     }
-//     rl.close();
+//     processor_stdout.close();
 //     mqtt_publisher.end();
 //     mqtt_listener.end();
 // });
-//
-// processor.on('close', (code) => {
-//     console.log(`child process exited with code ${code}`);
-// });
+
+processor.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+});
 
 // Prints MQTT listener/publisher url object
 // console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
@@ -115,28 +115,9 @@ mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
 
     // Forwards message to processor
-    // FIXME: the child prosess is not spawned on every message but is a long
-    // living process with an internal loop reading from stdin line by line.
-    // When the process dies, the service-adapter needs to die with it!
-    sp = child_process.spawn(service_processor);
-    sp.stdin.write(message.toString().trim() + '\n');
-
-    // Processor stdout response, publish response
-    // FIXME: I am pretty sure on_data does not suffice here. Because data does
-    // NOT mean line. It is just the current buffer. So it can be half a line or
-    // it can be two lines!!! You have to separate things at the newline symbol.
-    // There is no action until a full line has been received ergo until a
-    // newline has been received. This is why I used readline here!!!
-    sp.stdout.on('data', function (data) {
-        // console.log(data.toString());
-        processor_stdout_message = JSON.parse(data);
-        mqtt_publisher.publish(processor_stdout_message.topic, data.toString());
-    });
-
-    // Forwards message to processor
-    // if (processor.connected) {
-    //     processor.stdin.write(message.toString().trim() + '\n');
-    // }
+    if (processor.connected) {
+        processor.stdin.write(message.toString().trim() + '\n');
+    }
 
 });
 
