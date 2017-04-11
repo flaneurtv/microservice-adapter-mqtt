@@ -1,16 +1,21 @@
 #!/bin/bash
+#!/usr/bin/env bash
 
-# This is a demo processor which shall be overwritten by your own logic.
-# This demo listens for tick messages and sends out a tick_reply on each one.
-read stdin_msg;
+# Just some prep stuff
+set -o nounset
+set -o errexit
+set -o pipefail
+# set -o xtrace
 
-# assigns JSON topic data to variable topic using jq
-topic=$( jq -r  '.topic' <<< "${stdin_msg}" )
-message=$( jq -r  '.message' <<< "${stdin_msg}" )
+# Set magic variables for current file & dir
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+__root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
 
-# if topic is "flaneur/tick" and message is "tick" then send to stdout a tock
-if [ $topic == "flaneur/tick" ] && [ $message == "tick" ]; then
-    topic="flaneur/log"
-    tick_reply="tock"
-    printf '{"topic": "%s", "message": "%s"}\n' "$topic" "$tick_reply"
-fi
+# And this is the actual processor code
+while true
+do
+  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.000Z"` envsubst < $__dir/schema-tick.json | jq -c -M .
+  sleep 3
+done

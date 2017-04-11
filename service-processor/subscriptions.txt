@@ -1,2 +1,0 @@
-/tusd/upload_success
-/tick

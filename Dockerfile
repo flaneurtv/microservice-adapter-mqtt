@@ -1,7 +1,7 @@
 FROM node:7.8.0
 
 RUN apt-get update && \
-  apt-get install -y jq uuid-runtime && \
+  apt-get install -y jq uuid-runtime gettext-base && \
   apt-get autoclean -y && apt-get autoremove -y && apt-get clean -y && \
   rm -rf /var/lib/apt/lists/*
 

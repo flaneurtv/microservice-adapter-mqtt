@@ -47,27 +47,28 @@ processor_stderr.on('line', (line) => {
 });
 
 // FIXME: define proper log messages to publish on MQTT
-// processor_stdout.on('close', () => {
-//     console.log('event: Readline CLOSE event emitted');
-//     if (mqtt_publisher.connected === true) {
-//         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
-//     }
-//     processor_stdout.close();
-//     mqtt_publisher.end();
-//     mqtt_listener.end();
-// });
+// FIXME: make sure the adapter terminates when the processor is killed
+processor_stdout.on('close', () => {
+    console.log('event: Readline CLOSE event emitted');
+    if (mqtt_publisher.connected === true) {
+        mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
+    }
+    processor_stdout.close();
+    mqtt_publisher.end();
+    mqtt_listener.end();
+});
 
 // FIXME: define proper log messages to publish on MQTT
 // FIXME: make sure node exits gracefully on processor termination
-// processor_stdout.on('SIGINT', () => {
-//     console.log('event: Readline SIGINT event emitted');
-//     if (mqtt_publisher.connected === true) {
-//         mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
-//     }
-//     processor_stdout.close();
-//     mqtt_publisher.end();
-//     mqtt_listener.end();
-// });
+processor_stdout.on('SIGINT', () => {
+    console.log('event: Readline SIGINT event emitted');
+    if (mqtt_publisher.connected === true) {
+        mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
+    }
+    processor_stdout.close();
+    mqtt_publisher.end();
+    mqtt_listener.end();
+});
 
 processor.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
@@ -187,34 +188,34 @@ mqtt_publisher.on("reconnect", function() {
 
 // FIXME: this is supposed to be part of the processor not the service-adapter
 // Sends tick test every 3 seconds (3000ms)
-function sendTick() {
-  // FIXME: the "flaneur" part of the topic has to come from the NAMESPACE env
-    mqtt_publisher.publish(namespace + "/tick", JSON.stringify(
-        {
-            "topic": namespace + "/tick",
-            "message": "tick",
-            "created_at": moment().utc().unix(),
-        })
-    );
-}
-setInterval(sendTick, 3000);
+// function sendTick() {
+//   // FIXME: the "flaneur" part of the topic has to come from the NAMESPACE env
+//     mqtt_publisher.publish(namespace + "/tick", JSON.stringify(
+//         {
+//             "topic": namespace + "/tick",
+//             "message": "tick",
+//             "created_at": moment().utc().unix(),
+//         })
+//     );
+// }
+// setInterval(sendTick, 3000);
 
 // FIXME: you could remodle this into the "alive" message functionality I was
 // talking about. This "alive" responder, which responds to the "tick" messages
 // does really belong to the service-adapter code. The tick_responder test case
 // service-processor does not.
 // Sends test after 1 second (1000ms)
-setTimeout(function() {
-    mqtt_publisher.publish(namespace + "/tusd/upload_success", JSON.stringify(
-        {
-            "topic": namespace + "/tusd/upload_success",
-            "service_uuid": service_uuid,
-            "service_name": service_name,
-            "service_host": service_host,
-            "created_at": moment().utc().unix(),
-            "payload": {
-                "tick_uuid": "TICKUUID"
-            }
-        })
-    );
-}, 1000);
+// setTimeout(function() {
+//     mqtt_publisher.publish(namespace + "/tusd/upload_success", JSON.stringify(
+//         {
+//             "topic": namespace + "/tusd/upload_success",
+//             "service_uuid": service_uuid,
+//             "service_name": service_name,
+//             "service_host": service_host,
+//             "created_at": moment().utc().unix(),
+//             "payload": {
+//                 "tick_uuid": "TICKUUID"
+//             }
+//         })
+//     );
+// }, 1000);
