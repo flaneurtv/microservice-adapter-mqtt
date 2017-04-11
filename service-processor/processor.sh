@@ -6,11 +6,11 @@ read stdin_msg;
 
 # assigns JSON topic data to variable topic using jq
 topic=$( jq -r  '.topic' <<< "${stdin_msg}" )
+message=$( jq -r  '.message' <<< "${stdin_msg}" )
 
-# if topic is "flaneur/tusd/upload_success" then send to stdout upload_status
-if [ $topic == "flaneur/tusd/upload_success" ]; then
-    topic="flaneur/tusd/upload_status"
-    created_at="672534868293"
-
-    printf '{"topic": "%s", "created_at": "%s"}\n' "$topic" "$created_at"
+# if topic is "flaneur/tick" and message is "tick" then send to stdout a tock
+if [ $topic == "flaneur/tick" ] && [ $message == "tick" ]; then
+    topic="flaneur/tick"
+    tick_reply="tock"
+    printf '{"topic": "%s", "message": "%s"}\n' "$topic" "$tick_reply"
 fi

@@ -121,6 +121,18 @@ mqtt_publisher.on("reconnect", function() {
 });
 
 
+// Sends tick test every 3 seconds (3000ms)
+function sendTick() {
+    mqtt_publisher.publish("flaneur/tick", JSON.stringify(
+        {
+            "topic": "flaneur/tick",
+            "message": "tick"
+        })
+    );
+}
+setInterval(sendTick, 3000);
+
+
 // Sends test after 1 second (1000ms)
 setTimeout(function() {
     mqtt_publisher.publish("flaneur/tusd/upload_success", JSON.stringify(
