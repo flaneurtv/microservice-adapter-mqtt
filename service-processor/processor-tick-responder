@@ -18,7 +18,7 @@ while IFS= read -r line; do
   if [ $? -eq 0 ]; then
     TICK_UUID=`echo $line | jq --raw-output .payload.tick_uuid` \
     TICK_TIMESTAMP=`echo $line | jq --raw-output .payload.tick_timestamp` \
-    CREATED_AT=`date -u +"%FT%T.000Z"` \
+    CREATED_AT=`date -u +"%FT%T.%3NZ"` \
     envsubst < $__dir/schema-tick-response.json | jq -c -M .
   else
     # FIXME: needs to be adjusted yet

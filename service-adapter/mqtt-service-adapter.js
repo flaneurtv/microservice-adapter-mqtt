@@ -200,7 +200,7 @@ mqtt_publisher.on("reconnect", function() {
 //         {
 //             "topic": namespace + "/tick",
 //             "message": "tick",
-//             "created_at": moment().utc().unix(),
+//             "created_at": moment().utc().toISOString(),
 //         })
 //     );
 // }
@@ -218,7 +218,7 @@ mqtt_publisher.on("reconnect", function() {
 //             "service_uuid": service_uuid,
 //             "service_name": service_name,
 //             "service_host": service_host,
-//             "created_at": moment().utc().unix(),
+//             "created_at": moment().utc().toISOString(),
 //             "payload": {
 //                 "tick_uuid": "TICKUUID"
 //             }

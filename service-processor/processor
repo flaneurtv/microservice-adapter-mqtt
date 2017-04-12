@@ -16,6 +16,6 @@ __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on
 # And this is the actual processor code
 while true
 do
-  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.000Z"` envsubst < $__dir/schema-tick.json | jq -c -M .
+  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.%3NZ"` envsubst < $__dir/schema-tick.json | jq -c -M .
   sleep 3
 done
