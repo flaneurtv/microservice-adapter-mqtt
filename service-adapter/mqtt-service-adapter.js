@@ -11,7 +11,7 @@ var pjson = require('../package.json');
 var subscriptions_txt = './service-processor/subscriptions.txt';
 
 // importing all necessary ENV vars
-var namespace = process.env.NAMESPACE || "";
+var namespace = process.env.NAMESPACE || "default";
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
 var service_host = os.hostname(); // equals the docker container ID
@@ -56,7 +56,7 @@ processor_stderr.on('line', (line) => {
 processor_stdout.on('close', () => {
     console.log('event: Readline CLOSE event emitted');
     if (mqtt_publisher.connected === true) {
-        mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
+        mqtt_publisher.publish(namespace + '/' + 'log', '{"service": "status_checker", "event": "readline CLOSE event emitted", "reaction": "terminating"}');
     }
     processor_stdout.close();
     mqtt_publisher.end();
@@ -68,7 +68,7 @@ processor_stdout.on('close', () => {
 processor_stdout.on('SIGINT', () => {
     console.log('event: Readline SIGINT event emitted');
     if (mqtt_publisher.connected === true) {
-        mqtt_publisher.publish(namespace + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
+        mqtt_publisher.publish(namespace + '/' + 'log', '{"service": "status_checker", "event": "readline SIGINT event emitted", "reaction": "terminating"}');
     }
     processor_stdout.close();
     mqtt_publisher.end();
@@ -92,7 +92,7 @@ var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
     // username: "type1tv",
     // password: "nuesse",
     // will: {
-    //     topic: namespace + "log",
+    //     topic: namespace + '/' + "log",
     //     payload: "{service: " + service_name + ", event: 'last will'}"
     // }
 });
@@ -105,7 +105,7 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
         // username: "type1tv",
         // password: "nuesse",
         // will: {
-        //     topic: namespace + "log",
+        //     topic: namespace + '/' + "log",
         //     payload: "{service: " + service_name + ", event: 'last will'}"
         // }
     });
@@ -143,8 +143,8 @@ mqtt_listener.on("connect", (connack) => {
             // checks it´s not an empty line
             if (line !== null && namespace !== "null") {
                 // Subscribe to topic it uses namespace variable, subscriptions.txt file SHOULD NOT have the namespace defined.
-                mqtt_listener.subscribe(namespace + line);
-                console.log("event => Topic subscribed: " + namespace + line);
+                mqtt_listener.subscribe(namespace + '/' + line);
+                console.log("event => Topic subscribed: " + namespace + '/' + line);
             }
         });
     } else {
