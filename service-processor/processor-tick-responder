@@ -1,4 +1,3 @@
-#!/bin/bash
 #!/usr/bin/env bash
 
 # Just some prep stuff
@@ -14,7 +13,8 @@ __base="$(basename ${__file} .sh)"
 __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
 
 while IFS= read -r line; do
-  echo $line </dev/null | jq . > /dev/null 2>&1
+  # first we check if the line is valid JSON
+  echo $line | jq . > /dev/null 2>&1
   if [ $? -eq 0 ]; then
     TICK_UUID=`echo $line | jq --raw-output .payload.tick_uuid` \
     TICK_TIMESTAMP=`echo $line | jq --raw-output .payload.tick_timestamp` \

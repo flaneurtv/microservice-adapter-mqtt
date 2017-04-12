@@ -12,16 +12,21 @@ var subscriptions_txt = './service-processor/subscriptions.txt';
 
 // importing all necessary ENV vars
 var namespace = process.env.NAMESPACE || "";
-var service_name = pjson.name; // Name of service comes from package.json
+var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
 var service_host = os.hostname(); // equals the docker container ID
-var service_processor = "./service-processor/processor";
+process.env.SERVICE_NAME = service_name;
+process.env.SERVICE_UUID = service_uuid;
+process.env.SERVICE_HOST = service_host;
+var service_processor = process.env.SERVICE_PROCESSOR || "./service-processor/processor";
 var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
 var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
 // start the processor
 console.log('info: spawning processor: ' + service_processor);
-const processor = child_process.spawn(service_processor, []);
+processor_env = Object.create( process.env );
+
+const processor = child_process.spawn(service_processor, { env: process.env});
 const processor_stdout = readline.createInterface({ input: processor.stdout});
 const processor_stderr = readline.createInterface({ input: processor.stderr});
 
@@ -114,11 +119,12 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
+    processor.stdin.write(message.toString().trim() + '\n');
 
     // Forwards message to processor
-    if (processor.connected) {
-        processor.stdin.write(message.toString().trim() + '\n');
-    }
+    // if (processor.connected) {
+    //     processor.stdin.write(message.toString().trim() + '\n');
+    // }
 
 });
 
