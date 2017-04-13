@@ -4,7 +4,7 @@
   "main": "mqtt-service-adapter.js",
   "private": true,
   "scripts": {
-	    "start": "node service-adapter/mqtt-service-adapter.js"
+	  "start": "node service-adapter/mqtt-service-adapter.js"
   },
   "repository": {
     "type": "git",
@@ -15,8 +15,8 @@
   "homepage": "https://bitbucket.org/flaneurtv/service-name#readme",
   "dependencies": {
     "mqtt-service-adapter": "^0.0.1",
-    "mqtt": "^1.10.0",
-    "uuid": "",
-    "trim": ""
+    "mqtt": "^2.6.2",
+    "trim": "0.0.1",
+    "uuid": "^3.0.1"
   }
 }

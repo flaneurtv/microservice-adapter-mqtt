@@ -1,16 +1,19 @@
-// Setup variables
+/**
+ * Setup variables
+ */
 var url = require('url');
 var uuid = require('uuid/v1');
 var mqtt = require('mqtt');
 var readline = require('readline');
 var fs = require('fs');
 var os = require('os');
-var moment = require('moment');
 var child_process = require('child_process');
 var pjson = require('../package.json');
 var subscriptions_txt = './service-processor/subscriptions.txt';
 
-// importing all necessary ENV vars
+/**
+ * importing all necessary ENV vars
+ */
 var namespace = process.env.NAMESPACE || "default";
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
@@ -22,35 +25,43 @@ var service_processor = process.env.SERVICE_PROCESSOR || "./service-processor/pr
 var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
 var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
-// start the processor
-console.log('info: spawning processor: ' + service_processor);
+/**
+ * starts the processor
+ */
+console.log('info => spawning processor: ' + service_processor);
 processor_env = Object.create( process.env );
 
 const processor = child_process.spawn(service_processor, { env: process.env});
 const processor_stdout = readline.createInterface({ input: processor.stdout});
 const processor_stderr = readline.createInterface({ input: processor.stderr});
 
-// Processor stdout is published on MQTT if connected and valid JSON
-// If MQTT is not connected, lines are dropped to avoid late messages
+/**
+ * Processor stdout is published on MQTT if connected and valid JSON
+ * If MQTT is not connected, lines are dropped to avoid late messages
+ */
 processor_stdout.on('line', (line) => {
     if (JSON.parse(line) && mqtt_publisher.connected === true) {
         line = line.trim();
         processor_stdout_message = JSON.parse(line);
         mqtt_publisher.publish(processor_stdout_message.topic, line);
-        console.log('processor_stdout_message: ' + line);
+        console.log('processor_stdout_message => ' + line);
     }
 });
 
-// Processor stderr is forwarded to log line by line
-// QUESTION: I am unsure whether to forward to parent stderr or to stdout via
-// log facility
+/**
+ * Processor stderr is forwarded to log line by line
+ */
+// QUESTION: I am unsure whether to forward to parent stderr or to stdout via log facility
 processor_stderr.on('line', (line) => {
     if (line !== null) {
         line = line.trim();
-        console.log('processor_stderr_message: ' + line);
+        console.log('processor_stderr_message => ' + line);
     }
 });
 
+/**
+ * On CLOSE processor
+ */
 // FIXME: define proper log messages to publish on MQTT
 // FIXME: make sure the adapter terminates when the processor is killed
 processor_stdout.on('close', () => {
@@ -63,6 +74,9 @@ processor_stdout.on('close', () => {
     mqtt_listener.end();
 });
 
+/**
+ * On SIGINT processor
+ */
 // FIXME: define proper log messages to publish on MQTT
 // FIXME: make sure node exits gracefully on processor termination
 processor_stdout.on('SIGINT', () => {
@@ -76,14 +90,18 @@ processor_stdout.on('SIGINT', () => {
 });
 
 processor.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+    console.log('child process exited with code: ' + code);
 });
 
-// Prints MQTT listener/publisher url object
+/**
+ * Prints MQTT listener/publisher url object
+ */
 // console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
 // console.log('info: mqtt_publisher_url parsed:' + JSON.stringify(mqtt_publisher_url_object));
 
-// Connection for MQTT bus listener
+/**
+ * Connection for MQTT bus listener
+ */
 // FIXME: the login credentials shall be read from
 // /run/secrets/mqtt_publisher.json and
 // /run/secrets/mqtt_listener.json
@@ -97,7 +115,9 @@ var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
     // }
 });
 
-// Connection for MQTT bus publisher
+/**
+ * Connection for MQTT bus publisher
+ */
 if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     var mqtt_publisher = mqtt_listener;
 } else {
@@ -111,21 +131,14 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     });
 }
 
-
 /**
  * Events for MQTT listener
  */
-
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
-    processor.stdin.write(message.toString().trim() + '\n');
-
     // Forwards message to processor
-    // if (processor.connected) {
-    //     processor.stdin.write(message.toString().trim() + '\n');
-    // }
-
+    processor.stdin.write(message.toString().trim() + '\n');
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
@@ -171,7 +184,6 @@ mqtt_listener.on("reconnect", function() {
 /**
  * Events for MQTT publisher
  */
-
 // Prints when connected to MQTT publisher
 mqtt_publisher.on("connect", (connack) => {
     console.log('event => MQTT publisher connected to: "' + mqtt_publisher_url_object.href + '"');
@@ -191,37 +203,3 @@ mqtt_publisher.on("offline", function() {
 mqtt_publisher.on("reconnect", function() {
     console.log('event => Trying to reconnect to publisher in: "' + mqtt_publisher_url_object.href + '"');
 });
-
-// FIXME: this is supposed to be part of the processor not the service-adapter
-// Sends tick test every 3 seconds (3000ms)
-// function sendTick() {
-//   // FIXME: the "flaneur" part of the topic has to come from the NAMESPACE env
-//     mqtt_publisher.publish(namespace + "/tick", JSON.stringify(
-//         {
-//             "topic": namespace + "/tick",
-//             "message": "tick",
-//             "created_at": moment().utc().toISOString(),
-//         })
-//     );
-// }
-// setInterval(sendTick, 3000);
-
-// FIXME: you could remodle this into the "alive" message functionality I was
-// talking about. This "alive" responder, which responds to the "tick" messages
-// does really belong to the service-adapter code. The tick_responder test case
-// service-processor does not.
-// Sends test after 1 second (1000ms)
-// setTimeout(function() {
-//     mqtt_publisher.publish(namespace + "/tusd/upload_success", JSON.stringify(
-//         {
-//             "topic": namespace + "/tusd/upload_success",
-//             "service_uuid": service_uuid,
-//             "service_name": service_name,
-//             "service_host": service_host,
-//             "created_at": moment().utc().toISOString(),
-//             "payload": {
-//                 "tick_uuid": "TICKUUID"
-//             }
-//         })
-//     );
-// }, 1000);
