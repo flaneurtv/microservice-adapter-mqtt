@@ -10,6 +10,8 @@ var os = require('os');
 var child_process = require('child_process');
 var pjson = require('../package.json');
 var subscriptions_txt = './service-processor/subscriptions.txt';
+var mqtt_listener_credentials = require('/run/secrets/mqtt_listener.json');
+var mqtt_publisher_credentials = require('/run/secrets/mqtt_publisher.json');
 
 /**
  * importing all necessary ENV vars
@@ -29,7 +31,6 @@ var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp
  * starts the processor
  */
 console.log('info => spawning processor: ' + service_processor);
-processor_env = Object.create( process.env );
 
 const processor = child_process.spawn(service_processor, { env: process.env});
 const processor_stdout = readline.createInterface({ input: processor.stdout});
@@ -94,21 +95,19 @@ processor.on('close', (code) => {
 });
 
 /**
- * Prints MQTT listener/publisher url object
+ * Handles uncaughtException errors node exits gracefully on processor termination
  */
-// console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
-// console.log('info: mqtt_publisher_url parsed:' + JSON.stringify(mqtt_publisher_url_object));
+process.on('uncaughtException', function(error) {
+    console.log('child process exited => ' + error);
+    process.exit(0);
+});
 
 /**
  * Connection for MQTT bus listener
  */
-// FIXME: the login credentials shall be read from
-// /run/secrets/mqtt_publisher.json and
-// /run/secrets/mqtt_listener.json
-// If you have a more meaningful name, please tell me.
 var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
-    // username: "type1tv",
-    // password: "nuesse",
+    username: mqtt_listener_credentials.username,
+    password: mqtt_listener_credentials.password,
     // will: {
     //     topic: namespace + '/' + "log",
     //     payload: "{service: " + service_name + ", event: 'last will'}"
@@ -122,8 +121,8 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     var mqtt_publisher = mqtt_listener;
 } else {
     var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
-        // username: "type1tv",
-        // password: "nuesse",
+        username: mqtt_publisher_credentials.username,
+        password: mqtt_publisher_credentials.password,
         // will: {
         //     topic: namespace + '/' + "log",
         //     payload: "{service: " + service_name + ", event: 'last will'}"
@@ -137,14 +136,13 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
-    // Forwards message to processor
+    // Forwards message to processor but first checks if proccesor is connected
     processor.stdin.write(message.toString().trim() + '\n');
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
 mqtt_listener.on("connect", (connack) => {
     console.log('event => MQTT listener connected to: "' + mqtt_listener_url_object.href + '"');
-
     // checks if subscriptions.txt files exists
     if (fs.existsSync(subscriptions_txt)) {
         // Reads file subscriptions.txt line by line for MQTT topics the adapter should be subscribed to
@@ -179,7 +177,6 @@ mqtt_listener.on("offline", function() {
 mqtt_listener.on("reconnect", function() {
     console.log('event => Trying to reconnect to listener in: "' + mqtt_listener_url_object.href + '"');
 });
-
 
 /**
  * Events for MQTT publisher
