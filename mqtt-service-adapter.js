@@ -28,6 +28,27 @@ var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp:/
 var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
 /**
+ * checks credentials for MQTT bus
+ */
+if (fs.existsSync(mqtt_listener_credentials)) {
+    mqtt_listener_credentials_username = mqtt_listener_credentials.username;
+    mqtt_listener_credentials_password = mqtt_listener_credentials.password;
+} else {
+    console.log("info => MQTT listener credentials missing, using empty username/password.");
+    mqtt_listener_credentials_username = "";
+    mqtt_listener_credentials_password = "";
+}
+
+if (fs.existsSync(mqtt_publisher_credentials)) {
+    mqtt_publisher_credentials_username = mqtt_publisher_credentials.username;
+    mqtt_publisher_credentials_password = mqtt_publisher_credentials.password;
+} else {
+    console.log("info => MQTT publisher credentials missing, using empty username/password.");
+    mqtt_publisher_credentials_username = "";
+    mqtt_publisher_credentials_password = "";
+}
+
+/**
  * starts the processor
  */
 console.log('info => spawning processor: ' + service_processor);
@@ -104,8 +125,8 @@ process.on('uncaughtException', function(error) {
  * Connection for MQTT bus listener
  */
 var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
-    username: mqtt_listener_credentials.username,
-    password: mqtt_listener_credentials.password,
+    username: mqtt_listener_credentials_username,
+    password: mqtt_listener_credentials_password,
     // will: {
     //     topic: namespace + '/' + "log",
     //     payload: "{service: " + service_name + ", event: 'last will'}"
@@ -119,8 +140,8 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     var mqtt_publisher = mqtt_listener;
 } else {
     var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
-        username: mqtt_publisher_credentials.username,
-        password: mqtt_publisher_credentials.password,
+        username: mqtt_publisher_credentials_username,
+        password: mqtt_publisher_credentials_password,
         // will: {
         //     topic: namespace + '/' + "log",
         //     payload: "{service: " + service_name + ", event: 'last will'}"
