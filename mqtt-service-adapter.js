@@ -31,6 +31,7 @@ var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp
  * checks credentials for MQTT bus
  */
 if (fs.existsSync(mqtt_listener_credentials)) {
+    mqtt_listener_credentials = require(mqtt_listener_credentials); // Parse JSON
     mqtt_listener_credentials_username = mqtt_listener_credentials.username;
     mqtt_listener_credentials_password = mqtt_listener_credentials.password;
 } else {
@@ -40,6 +41,7 @@ if (fs.existsSync(mqtt_listener_credentials)) {
 }
 
 if (fs.existsSync(mqtt_publisher_credentials)) {
+    mqtt_publisher_credentials = require(mqtt_publisher_credentials); // Parse JSON
     mqtt_publisher_credentials_username = mqtt_publisher_credentials.username;
     mqtt_publisher_credentials_password = mqtt_publisher_credentials.password;
 } else {
