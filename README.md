@@ -11,7 +11,7 @@ docker build -t flaneurtv/ticker-service --no-cache .
 
 Testing the service-processors directly
 ```
-docker rm -f sandbox ; clear ; docker run -it --name sandbox -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="ticker-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" flaneurtv/ticker-service /bin/bash
+docker rm -f sandbox ; clear ; docker run -it --name sandbox -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor -v $PWD/local:/run/secrets --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="ticker-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" flaneurtv/ticker-service /bin/bash
 ```
 
 Then run the following commands inside the container and see what happens
@@ -22,10 +22,10 @@ Then run the following commands inside the container and see what happens
 
 For the ticker-service
 ```
-docker rm -f ticker-service ; clear ; docker run -it --name ticker-service -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="ticker-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" flaneurtv/ticker-service
+docker rm -f ticker-service ; clear ; docker run -it --name ticker-service -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor -v $PWD/local:/run/secrets --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="ticker-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" flaneurtv/ticker-service
 ```
 
 For the tick-responder-service
 ```
-docker rm -f tick-responder-service ; clear ; docker run -it --name tick-responder-service -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="tick-responder-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" -e SERVICE_PROCESSOR="./service-processor/processor-tick-responder" flaneurtv/ticker-service
+docker rm -f tick-responder-service ; clear ; docker run -it --name tick-responder-service -v $PWD/service-adapter:/usr/src/app/service-adapter -v $PWD/service-processor:/usr/src/app/service-processor -v $PWD/local:/run/secrets --link mqtt -e NAMESPACE="flaneur" -e SERVICE_NAME="tick-responder-service" -e MQTT_LISTENER_URL="tcp://mqtt:1883" -e MQTT_PUBLISHER_URL="tcp://mqtt:1883" -e SERVICE_PROCESSOR="./service-processor/processor-tick-responder" flaneurtv/ticker-service
 ```
