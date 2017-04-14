@@ -28,26 +28,56 @@ var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp:/
 var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
 /**
- * checks credentials for MQTT bus
+ * checks existing credentials for MQTT listener
  */
 if (fs.existsSync(mqtt_listener_credentials)) {
-    mqtt_listener_credentials = require(mqtt_listener_credentials); // Parse JSON
-    mqtt_listener_credentials_username = mqtt_listener_credentials.username;
-    mqtt_listener_credentials_password = mqtt_listener_credentials.password;
+    // Parse JSON
+    mqtt_listener_credentials = require(mqtt_listener_credentials);
+    // Connection for MQTT bus listener
+    var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
+        username: mqtt_listener_credentials.username,
+        password: mqtt_listener_credentials.password,
+        will: {
+            topic: namespace + '/' + "log",
+            payload: "{service: " + service_name + ", event: 'last will'}"
+        }
+    });
 } else {
-    console.log("info => MQTT listener credentials missing, using empty username/password.");
-    mqtt_listener_credentials_username = "";
-    mqtt_listener_credentials_password = "";
+    // Connection for MQTT bus listener WITHOUT AUTHORIZATION
+    var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
+        will: {
+            topic: namespace + '/' + "log",
+            payload: "{service: " + service_name + ", event: 'last will'}"
+        }
+    });
 }
 
+/**
+ * checks existing credentials for MQTT publisher
+ */
 if (fs.existsSync(mqtt_publisher_credentials)) {
     mqtt_publisher_credentials = require(mqtt_publisher_credentials); // Parse JSON
-    mqtt_publisher_credentials_username = mqtt_publisher_credentials.username;
-    mqtt_publisher_credentials_password = mqtt_publisher_credentials.password;
+    // Connection for MQTT bus publisher
+    if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
+        var mqtt_publisher = mqtt_listener;
+    } else {
+        var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
+            username: mqtt_publisher_credentials.username,
+            password: mqtt_publisher_credentials.password,
+            will: {
+                topic: namespace + '/' + "log",
+                payload: "{service: " + service_name + ", event: 'last will'}"
+            }
+        });
+    }
 } else {
-    console.log("info => MQTT publisher credentials missing, using empty username/password.");
-    mqtt_publisher_credentials_username = "";
-    mqtt_publisher_credentials_password = "";
+    // Connection for MQTT bus listener WITHOUT AUTHORIZATION
+    var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
+        will: {
+            topic: namespace + '/' + "log",
+            payload: "{service: " + service_name + ", event: 'last will'}"
+        }
+    });
 }
 
 /**
@@ -122,34 +152,6 @@ process.on('uncaughtException', function(error) {
     console.log('child process exited => ' + error);
     process.exit(0);
 });
-
-/**
- * Connection for MQTT bus listener
- */
-var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
-    username: mqtt_listener_credentials_username,
-    password: mqtt_listener_credentials_password,
-    // will: {
-    //     topic: namespace + '/' + "log",
-    //     payload: "{service: " + service_name + ", event: 'last will'}"
-    // }
-});
-
-/**
- * Connection for MQTT bus publisher
- */
-if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
-    var mqtt_publisher = mqtt_listener;
-} else {
-    var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
-        username: mqtt_publisher_credentials_username,
-        password: mqtt_publisher_credentials_password,
-        // will: {
-        //     topic: namespace + '/' + "log",
-        //     payload: "{service: " + service_name + ", event: 'last will'}"
-        // }
-    });
-}
 
 /**
  * Events for MQTT listener
