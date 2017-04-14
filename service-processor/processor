@@ -18,6 +18,6 @@ while true
 do
   TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.%3NZ"` envsubst < $__dir/schema-tick.json | jq -c -M .
   sleep 3
-  # kill process (test)
-  kill -9 $$
+  # simulate kill processor (ctrl + c)
+  kill -SIGINT $$
 done
