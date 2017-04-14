@@ -1,16 +1,21 @@
-// Setup variables
+/**
+ * Setup variables
+ */
 var url = require('url');
 var uuid = require('uuid/v1');
 var mqtt = require('mqtt');
 var readline = require('readline');
 var fs = require('fs');
 var os = require('os');
-var moment = require('moment');
 var child_process = require('child_process');
 var pjson = require('../package.json');
 var subscriptions_txt = './service-processor/subscriptions.txt';
+var mqtt_listener_credentials = require('/run/secrets/mqtt_listener.json');
+var mqtt_publisher_credentials = require('/run/secrets/mqtt_publisher.json');
 
-// importing all necessary ENV vars
+/**
+ * importing all necessary ENV vars
+ */
 var namespace = process.env.NAMESPACE || "default";
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
@@ -22,37 +27,43 @@ var service_processor = process.env.SERVICE_PROCESSOR || "./service-processor/pr
 var mqtt_listener_url_object = url.parse(process.env.MQTT_LISTENER_URL || "tcp://mqtt:1883");
 var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp://mqtt:1883");
 
-// start the processor
-console.log('info: spawning processor: ' + service_processor);
-processor_env = Object.create( process.env );
+/**
+ * starts the processor
+ */
+console.log('info => spawning processor: ' + service_processor);
 
 const processor = child_process.spawn(service_processor, { env: process.env});
 const processor_stdout = readline.createInterface({ input: processor.stdout});
 const processor_stderr = readline.createInterface({ input: processor.stderr});
 
-// Processor stdout is published on MQTT if connected and valid JSON
-// If MQTT is not connected, lines are dropped to avoid late messages
+/**
+ * Processor stdout is published on MQTT if connected and valid JSON
+ * If MQTT is not connected, lines are dropped to avoid late messages
+ */
 processor_stdout.on('line', (line) => {
     if (JSON.parse(line) && mqtt_publisher.connected === true) {
         line = line.trim();
         processor_stdout_message = JSON.parse(line);
         mqtt_publisher.publish(processor_stdout_message.topic, line);
-        console.log('processor_stdout_message: ' + line);
+        console.log('processor_stdout_message => ' + line);
     }
 });
 
-// Processor stderr is forwarded to log line by line
-// QUESTION: I am unsure whether to forward to parent stderr or to stdout via
-// log facility
+/**
+ * Processor stderr is forwarded to log line by line
+ */
+// QUESTION: I am unsure whether to forward to parent stderr or to stdout via log facility
 processor_stderr.on('line', (line) => {
     if (line !== null) {
         line = line.trim();
-        console.log('processor_stderr_message: ' + line);
+        console.log('processor_stderr_message => ' + line);
     }
 });
 
+/**
+ * On CLOSE processor
+ */
 // FIXME: define proper log messages to publish on MQTT
-// FIXME: make sure the adapter terminates when the processor is killed
 processor_stdout.on('close', () => {
     console.log('event: Readline CLOSE event emitted');
     if (mqtt_publisher.connected === true) {
@@ -63,8 +74,10 @@ processor_stdout.on('close', () => {
     mqtt_listener.end();
 });
 
+/**
+ * On SIGINT processor
+ */
 // FIXME: define proper log messages to publish on MQTT
-// FIXME: make sure node exits gracefully on processor termination
 processor_stdout.on('SIGINT', () => {
     console.log('event: Readline SIGINT event emitted');
     if (mqtt_publisher.connected === true) {
@@ -76,34 +89,38 @@ processor_stdout.on('SIGINT', () => {
 });
 
 processor.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+    console.log('child process exited with code: ' + code);
 });
 
-// Prints MQTT listener/publisher url object
-// console.log('info: mqtt_listener_url parsed:' + JSON.stringify(mqtt_listener_url_object));
-// console.log('info: mqtt_publisher_url parsed:' + JSON.stringify(mqtt_publisher_url_object));
+/**
+ * Handles uncaughtException errors node exits gracefully on processor termination
+ */
+process.on('uncaughtException', function(error) {
+    console.log('child process exited => ' + error);
+    process.exit(0);
+});
 
-// Connection for MQTT bus listener
-// FIXME: the login credentials shall be read from
-// /run/secrets/mqtt_publisher.json and
-// /run/secrets/mqtt_listener.json
-// If you have a more meaningful name, please tell me.
+/**
+ * Connection for MQTT bus listener
+ */
 var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
-    // username: "type1tv",
-    // password: "nuesse",
+    username: mqtt_listener_credentials.username,
+    password: mqtt_listener_credentials.password,
     // will: {
     //     topic: namespace + '/' + "log",
     //     payload: "{service: " + service_name + ", event: 'last will'}"
     // }
 });
 
-// Connection for MQTT bus publisher
+/**
+ * Connection for MQTT bus publisher
+ */
 if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     var mqtt_publisher = mqtt_listener;
 } else {
     var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
-        // username: "type1tv",
-        // password: "nuesse",
+        username: mqtt_publisher_credentials.username,
+        password: mqtt_publisher_credentials.password,
         // will: {
         //     topic: namespace + '/' + "log",
         //     payload: "{service: " + service_name + ", event: 'last will'}"
@@ -111,27 +128,19 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
     });
 }
 
-
 /**
  * Events for MQTT listener
  */
-
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
-    processor.stdin.write(message.toString().trim() + '\n');
-
     // Forwards message to processor
-    // if (processor.connected) {
-    //     processor.stdin.write(message.toString().trim() + '\n');
-    // }
-
+    processor.stdin.write(message.toString().trim() + '\n');
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
 mqtt_listener.on("connect", (connack) => {
     console.log('event => MQTT listener connected to: "' + mqtt_listener_url_object.href + '"');
-
     // checks if subscriptions.txt files exists
     if (fs.existsSync(subscriptions_txt)) {
         // Reads file subscriptions.txt line by line for MQTT topics the adapter should be subscribed to
@@ -167,11 +176,9 @@ mqtt_listener.on("reconnect", function() {
     console.log('event => Trying to reconnect to listener in: "' + mqtt_listener_url_object.href + '"');
 });
 
-
 /**
  * Events for MQTT publisher
  */
-
 // Prints when connected to MQTT publisher
 mqtt_publisher.on("connect", (connack) => {
     console.log('event => MQTT publisher connected to: "' + mqtt_publisher_url_object.href + '"');
@@ -191,37 +198,3 @@ mqtt_publisher.on("offline", function() {
 mqtt_publisher.on("reconnect", function() {
     console.log('event => Trying to reconnect to publisher in: "' + mqtt_publisher_url_object.href + '"');
 });
-
-// FIXME: this is supposed to be part of the processor not the service-adapter
-// Sends tick test every 3 seconds (3000ms)
-// function sendTick() {
-//   // FIXME: the "flaneur" part of the topic has to come from the NAMESPACE env
-//     mqtt_publisher.publish(namespace + "/tick", JSON.stringify(
-//         {
-//             "topic": namespace + "/tick",
-//             "message": "tick",
-//             "created_at": moment().utc().toISOString(),
-//         })
-//     );
-// }
-// setInterval(sendTick, 3000);
-
-// FIXME: you could remodle this into the "alive" message functionality I was
-// talking about. This "alive" responder, which responds to the "tick" messages
-// does really belong to the service-adapter code. The tick_responder test case
-// service-processor does not.
-// Sends test after 1 second (1000ms)
-// setTimeout(function() {
-//     mqtt_publisher.publish(namespace + "/tusd/upload_success", JSON.stringify(
-//         {
-//             "topic": namespace + "/tusd/upload_success",
-//             "service_uuid": service_uuid,
-//             "service_name": service_name,
-//             "service_host": service_host,
-//             "created_at": moment().utc().toISOString(),
-//             "payload": {
-//                 "tick_uuid": "TICKUUID"
-//             }
-//         })
-//     );
-// }, 1000);

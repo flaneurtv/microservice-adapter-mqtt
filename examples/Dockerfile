@@ -1,4 +1,4 @@
-FROM node:7.8.0
+FROM node:7.9.0
 
 RUN apt-get update && \
   apt-get install -y jq uuid-runtime gettext-base && \
