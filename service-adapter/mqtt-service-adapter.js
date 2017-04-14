@@ -64,7 +64,6 @@ processor_stderr.on('line', (line) => {
  * On CLOSE processor
  */
 // FIXME: define proper log messages to publish on MQTT
-// FIXME: make sure the adapter terminates when the processor is killed
 processor_stdout.on('close', () => {
     console.log('event: Readline CLOSE event emitted');
     if (mqtt_publisher.connected === true) {
@@ -79,7 +78,6 @@ processor_stdout.on('close', () => {
  * On SIGINT processor
  */
 // FIXME: define proper log messages to publish on MQTT
-// FIXME: make sure node exits gracefully on processor termination
 processor_stdout.on('SIGINT', () => {
     console.log('event: Readline SIGINT event emitted');
     if (mqtt_publisher.connected === true) {
@@ -136,7 +134,7 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href) {
 // Listen to messages on the MQTT bus
 mqtt_listener.on("message", function(topic, message) {
     console.log('event => MQTT_MESSAGE_RECEIVED, topic: "' + topic + '", message: "' + message.toString().trim() + '"');
-    // Forwards message to processor but first checks if proccesor is connected
+    // Forwards message to processor
     processor.stdin.write(message.toString().trim() + '\n');
 });
 
