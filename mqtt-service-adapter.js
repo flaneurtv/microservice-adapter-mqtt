@@ -185,6 +185,9 @@ mqtt_listener.on("connect", (connack) => {
 // Prints error messages on the MQTT listener bus
 mqtt_listener.on("error", function(error) {
     console.log("event => ERROR listener: ", error);
+    if (error.code === 5) { // Error: MQTT Connection refused: Not authorized
+        process.exit(0);
+    }
 });
 
 // Prints when MQTT listener bus is offline
@@ -208,6 +211,9 @@ mqtt_publisher.on("connect", (connack) => {
 // Prints error messages on the MQTT bus
 mqtt_publisher.on("error", function(error) {
     console.log("event => ERROR publisher: ", error);
+    if (error.code === 5) { // Error: MQTT Connection refused: Not authorized
+        process.exit(0);
+    }
 });
 
 // Prints when MQTT bus is offline
