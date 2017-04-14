@@ -10,8 +10,8 @@ var os = require('os');
 var child_process = require('child_process');
 var pjson = require('../package.json');
 var subscriptions_txt = './service-processor/subscriptions.txt';
-var mqtt_listener_credentials = require('/run/secrets/mqtt_listener.json');
-var mqtt_publisher_credentials = require('/run/secrets/mqtt_publisher.json');
+var mqtt_listener_credentials = '/run/secrets/mqtt_listener.json';
+var mqtt_publisher_credentials = '/run/secrets/mqtt_publisher.json';
 
 /**
  * importing all necessary ENV vars
