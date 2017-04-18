@@ -118,8 +118,8 @@ processor_stderr.on('line', (line) => {
  */
 // FIXME: define proper log messages to publish on MQTT
 processor_stdout.on('close', () => {
-  logme('{"service": "' + service_name + '", "event": "Readline CLOSE event emitted", "reaction": "termination"}');
-  console.log('event => Readline CLOSE event emitted');
+    logme('{"service": "' + service_name + '", "event": "Readline CLOSE event emitted", "reaction": "termination"}');
+    console.log('event => Readline CLOSE event emitted');
 });
 
 /**
@@ -129,25 +129,26 @@ processor_stdout.on('close', () => {
 // seems to never trigger at all, even if I kill -SIGINT the processor and
 // even though processor.on('exit') shows SIGINT as signal
 processor_stdout.on('SIGINT', () => {
-  logme('{"service": "' + service_name + '", "event": "Readline SIGINT event emitted", "reaction": "termination"}');
-  console.log('event => Readline SIGINT event emitted');
+    logme('{"service": "' + service_name + '", "event": "Readline SIGINT event emitted", "reaction": "termination"}');
+    console.log('event => Readline SIGINT event emitted');
 });
 
 processor.on('close', (code, signal) => {
-  // triggers after processor.on('exit')
-  logme('{"service": "' + service_name + '", "event": "Processor CLOSE event emitted", "reaction": "termination"}');
-  console.log('event => Processor CLOSE with code ' + code + ' and signal ' + signal);
-  setTimeout(function () {
-    mqtt_publisher.end();
-    mqtt_listener.end();
-    process.exit(0);
-  }, 100);
+    // triggers after processor.on('exit')
+    logme('{"service": "' + service_name + '", "event": "Processor CLOSE event emitted", "reaction": "termination"}');
+    console.log('event => Processor CLOSE with code ' + code + ' and signal ' + signal);
+    setTimeout(function () {
+        mqtt_publisher.end();
+        mqtt_listener.end();
+        process.exit(0);
+    }, 100);
 });
+
 processor.on('exit', (code, signal) => {
-  // triggers before processor.on('close')
-  logme('{"service": "' + service_name + '", "event": "Processor EXIT event emitted", "reaction": "termination"}');
-  console.log('event => Processor EXIT with code ' + code + ' and signal ' + signal);
-  processor.kill();
+    // triggers before processor.on('close')
+    logme('{"service": "' + service_name + '", "event": "Processor EXIT event emitted", "reaction": "termination"}');
+    console.log('event => Processor EXIT with code ' + code + ' and signal ' + signal);
+    processor.kill();
 });
 
 /**
@@ -235,9 +236,10 @@ mqtt_publisher.on("reconnect", function() {
     console.log('event => Trying to reconnect to publisher in: "' + mqtt_publisher_url_object.href + '"');
 });
 
+// Prints in console and publish on the MQTT bus log.
 function logme (message) {
-  console.log('event => Logme triggered: ' + message);
-  if (mqtt_publisher.connected === true) {
-      mqtt_publisher.publish(namespace + '/' + 'log', message);
-  }
+    console.log('event => Logme triggered: ' + message);
+    if (mqtt_publisher.connected === true) {
+        mqtt_publisher.publish(namespace + '/' + 'log', message);
+    }
 }
