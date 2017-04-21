@@ -84,8 +84,13 @@ if (fs.existsSync(mqtt_publisher_credentials)) {
  * starts the processor
  */
 console.log('info => spawning processor: ' + service_processor);
-
-const processor = child_process.spawn(service_processor, { env: process.env});
+var processor;
+// if processor is a javascript file, then use exec, otherwise use spawn
+if (service_processor.substr(service_processor.lastIndexOf('.') + 1) === 'js') {
+    processor = child_process.exec(service_processor, { env: process.env});
+} else {
+    processor = child_process.spawn(service_processor, { env: process.env});
+}
 const processor_stdout = readline.createInterface({ input: processor.stdout});
 const processor_stderr = readline.createInterface({ input: processor.stderr});
 
