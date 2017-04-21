@@ -114,7 +114,7 @@ processor_stderr.on('line', (line) => {
 });
 
 /**
- * On CLOSE processor
+ * On CLOSE processor_stdout
  */
 // FIXME: define proper log messages to publish on MQTT
 processor_stdout.on('close', () => {
@@ -133,6 +133,9 @@ processor_stdout.on('SIGINT', () => {
     console.log('event => Readline SIGINT event emitted');
 });
 
+/**
+ * Handles close on processor
+ */
 processor.on('close', (code, signal) => {
     // triggers after processor.on('exit')
     logme('{"service": "' + service_name + '", "event": "Processor CLOSE event emitted", "reaction": "termination"}');
@@ -144,10 +147,23 @@ processor.on('close', (code, signal) => {
     }, 100);
 });
 
+/**
+ * Handles exit on processor
+ */
 processor.on('exit', (code, signal) => {
     // triggers before processor.on('close')
     logme('{"service": "' + service_name + '", "event": "Processor EXIT event emitted", "reaction": "termination"}');
     console.log('event => Processor EXIT with code ' + code + ' and signal ' + signal);
+    processor.kill();
+});
+
+/**
+ * Handles errors on processor
+ */
+processor.on("error", function(error) {
+    // triggers before processor.on('error')
+    logme('{"service": "' + service_name + '", "event": "Processor ERROR event emitted", "reaction": "termination"}');
+    console.log('event => Processor ERROR : ' + error);
     processor.kill();
 });
 
