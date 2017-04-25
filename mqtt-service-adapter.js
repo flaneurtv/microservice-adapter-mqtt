@@ -99,10 +99,19 @@ const processor_stderr = readline.createInterface({ input: processor.stderr});
  * If MQTT is not connected, lines are dropped to avoid late messages
  */
 processor_stdout.on('line', (line) => {
-    if (JSON.parse(line) && mqtt_publisher.connected === true) {
-        line = line.trim();
-        processor_stdout_message = JSON.parse(line);
+	json_valid = false
+	try {
+		line = line.trim();
+		processor_stdout_message = JSON.parse(line);
+		json_valid = true
+	}
+	catch(err) { console.log('error => ' + err + ', processor_stdout_message => ' + line); }
+    if (json_valid === true && mqtt_publisher.connected === true) {
         mqtt_publisher.publish(processor_stdout_message.topic, line);
+		// FIXME: log messages like this one, should only be output, if some
+		// debug option (e.g. via ENV) has been set. In order to globally
+		// facilitate that, use the logme function (see bottom of this file)
+		// and extend, so it checks for this condition.
         console.log('processor_stdout_message => ' + line);
     }
 });
