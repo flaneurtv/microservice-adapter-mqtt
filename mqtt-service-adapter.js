@@ -16,6 +16,7 @@ var mqtt_publisher_credentials = '/run/secrets/mqtt_publisher.json';
 /**
  * importing all necessary ENV vars
  */
+var debug = process.env.DEBUG || "true"; // set DEBUG to "true"/"false" in ENV to log messages
 var namespace = process.env.NAMESPACE || "default";
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
@@ -99,19 +100,18 @@ const processor_stderr = readline.createInterface({ input: processor.stderr});
  * If MQTT is not connected, lines are dropped to avoid late messages
  */
 processor_stdout.on('line', (line) => {
-	json_valid = false
+	json_valid = false;
 	try {
 		line = line.trim();
 		processor_stdout_message = JSON.parse(line);
-		json_valid = true
+		json_valid = true;
 	}
-	catch(err) { console.log('error => ' + err + ', processor_stdout_message => ' + line); }
+	catch(err) {
+        console.log('error => ' + err + ', processor_stdout_message => ' + line);
+    }
     if (json_valid === true && mqtt_publisher.connected === true) {
         mqtt_publisher.publish(processor_stdout_message.topic, line);
-		// FIXME: log messages like this one, should only be output, if some
-		// debug option (e.g. via ENV) has been set. In order to globally
-		// facilitate that, use the logme function (see bottom of this file)
-		// and extend, so it checks for this condition.
+        logme('{"service": "' + service_name + '", "event": "processor_stdout_message => ", "message": "' + line + '"}');
         console.log('processor_stdout_message => ' + line);
     }
 });
@@ -268,8 +268,10 @@ mqtt_publisher.on("reconnect", function() {
 
 // Prints in console and publish on the MQTT bus log.
 function logme (message) {
-    console.log('event => Logme triggered: ' + message);
-    if (mqtt_publisher.connected === true) {
-        mqtt_publisher.publish(namespace + '/' + 'log', message);
+    if (debug === "true") {
+        console.log('event => Logme triggered: ' + message);
+        if (mqtt_publisher.connected === true) {
+            mqtt_publisher.publish(namespace + '/' + 'log', message);
+        }
     }
 }
