@@ -16,7 +16,7 @@ var mqtt_publisher_credentials = '/run/secrets/mqtt_publisher.json';
 /**
  * importing all necessary ENV vars
  */
-var debug = process.env.DEBUG || "true"; // set DEBUG to "true"/"false" in ENV to log messages
+var debug = process.env.DEBUG || true; // set DEBUG to true/false in ENV to log messages
 var namespace = process.env.NAMESPACE || "default";
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
@@ -268,7 +268,7 @@ mqtt_publisher.on("reconnect", function() {
 
 // Prints in console and publish on the MQTT bus log.
 function logme (message) {
-    if (debug === "true") {
+    if (debug === true) {
         console.log('event => Logme triggered: ' + message);
         if (mqtt_publisher.connected === true) {
             mqtt_publisher.publish(namespace + '/' + 'log', message);
