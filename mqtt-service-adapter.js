@@ -18,6 +18,11 @@ var mqtt_publisher_credentials = '/run/secrets/mqtt_publisher.json';
  */
 var debug = process.env.DEBUG || true; // set DEBUG to true/false in ENV to log messages
 var namespace = process.env.NAMESPACE || "default";
+// Checks if CHANNEL_UUID and PLAYOUT_UUID are set on ENV
+var namespace_subscriber = namespace;
+if (process.env.CHANNEL_UUID && process.env.PLAYOUT_UUID) {
+    namespace_subscriber = namespace + "/channel/" + process.env.CHANNEL_UUID + "/playout/" + process.env.PLAYOUT_UUID;
+}
 var service_name = process.env.SERVICE_NAME || pjson.name; // Name of service comes from package.json
 var service_uuid = uuid(); // randomly assigned
 var service_host = os.hostname(); // equals the docker container ID
@@ -211,10 +216,10 @@ mqtt_listener.on("connect", (connack) => {
         // With each line of subscriptions.txt create a subscription for the adapter
         rl.on('line', function(line) {
             // checks it´s not an empty line
-            if (line !== null && namespace !== "null") {
+            if (line !== null && namespace_subscriber !== "null") {
                 // Subscribe to topic it uses namespace variable, subscriptions.txt file SHOULD NOT have the namespace defined.
-                mqtt_listener.subscribe(namespace + '/' + line);
-                console.log("event => Topic subscribed: " + namespace + '/' + line);
+                mqtt_listener.subscribe(namespace_subscriber + '/' + line);
+                console.log("event => Topic subscribed: " + namespace_subscriber + '/' + line);
             }
         });
     } else {
