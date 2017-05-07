@@ -41,43 +41,47 @@ var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp
 /**
  * Creates MQTT_LISTENER connection with credentials if available
  */
-var mqtt_listener_credentials = {username: "", password: ""}
-if (fs.existsSync(mqtt_listener_credentials_file)) { mqtt_listener_credentials = require(mqtt_listener_credentials_file) }
-// Connection for MQTT bus listener
 var listener_client_id = service_name + "_" + service_host + "_" + service_uuid + "_listener"
-var listener_will_object = generate_debug_message("INFO", "last will", listener_client_id)
-var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
-    username: mqtt_listener_credentials.username,
-    password: mqtt_listener_credentials.password,
+var listener_will_object = generate_debug_message("info", "last will", listener_client_id)
+var mqtt_listener_options = {
 	clientId: listener_client_id,
     will: {
 		topic: listener_will_object.topic,
 		payload: listener_will_object.toString()
     }
-});
+}
+if (fs.existsSync(mqtt_listener_credentials_file)) {
+	var mqtt_listener_credentials = require(mqtt_listener_credentials_file)
+	if (mqtt_listener_credentials.username) mqtt_listener_options.username = mqtt_listener_credentials.username
+	if (mqtt_listener_credentials.password) mqtt_listener_options.password = mqtt_listener_credentials.password
+}
+// Connection for MQTT bus listener
+var mqtt_listener = mqtt.connect(mqtt_listener_url_object, mqtt_listener_options );
 
 /**
  * Creates MQTT_PUBLISHER connection with credentials if available
  * If LISTENER and PUBLISHER connection URL and credentials are equal,
  * it will just use the LISTENER connection.
  */
-var mqtt_publisher_credentials = {username: "", password: ""}
-if (fs.existsSync(mqtt_publisher_credentials)) { mqtt_publisher_credentials = require(mqtt_publisher_credentials) }
+ var publisher_client_id = service_name + "_" + service_host + "_" + service_uuid + "_publisher"
+ var publisher_will_object = generate_debug_message("info", "last will", publisher_client_id)
+ var mqtt_publisher_options = {
+	 clientId: publisher_client_id,
+	 will: {
+		 topic: publisher_will_object.topic,
+		 payload: publisher_will_object.toString()
+	 }
+ }
+if (fs.existsSync(mqtt_publisher_credentials)) {
+	var mqtt_publisher_credentials = require(mqtt_publisher_credentials)
+	if (mqtt_publisher_credentials.username) mqtt_publisher_options.username = mqtt_publisher_credentials.username
+	if (mqtt_publisher_credentials.password) mqtt_publisher_options.password = mqtt_publisher_credentials.password
+}
 if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href && mqtt_listener_credentials == mqtt_publisher_credentials) {
     var mqtt_publisher = mqtt_listener;
-	logme("DEBUG", "MQTT connection", "listener and publisher are equal")
+	logme("debug", "MQTT connection", "listener and publisher are equal")
 } else {
-	var publisher_client_id = service_name + "_" + service_host + "_" + service_uuid + "_publisher"
-	var publisher_will_object = generate_debug_message("INFO", "last will", publisher_client_id)
-    var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
-        username: mqtt_publisher_credentials.username,
-        password: mqtt_publisher_credentials.password,
-		clientId: publisher_client_id,
-        will: {
-            topic: publisher_will_object.topic,
-            payload: publisher_will_object.toString()
-        }
-    });
+	var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, mqtt_publisher_options);
 }
 
 /**
@@ -117,8 +121,8 @@ if (bridge !== "true") {
 
 	// FIXME: seems to never trigger at all, even if I kill -SIGINT the
 	// processor and even though processor.on('exit') shows SIGINT as signal
-	processor_stdout.on('SIGINT', () => { logme('INFO', "Processor STDOUT readline SIGINT event emitted"); });
-	processor_stdout.on('close', () => { logme('INFO', "Processor STDOUT readline CLOSE event emitted"); });
+	processor_stdout.on('SIGINT', () => { logme('info', "Processor STDOUT readline SIGINT event emitted"); });
+	processor_stdout.on('close', () => { logme('info', "Processor STDOUT readline CLOSE event emitted"); });
 
 	// Processor stderr is forwarded to out logme facility
 	// QUESTION: why is the line !== null here?
@@ -128,8 +132,8 @@ if (bridge !== "true") {
 	        logme('error','processor_stderr_message', line);
 	    }
 	});
-	processor_stderr.on('SIGINT', () => { logme('INFO', "Processor STDERR readline SIGINT event emitted"); });
-	processor_stderr.on('close', () => { logme('INFO', "Processor STDERR readline CLOSE event emitted"); });
+	processor_stderr.on('SIGINT', () => { logme('info', "Processor STDERR readline SIGINT event emitted"); });
+	processor_stderr.on('close', () => { logme('info', "Processor STDERR readline CLOSE event emitted"); });
 
 	/**
 	 * Processor event handlers
@@ -163,7 +167,7 @@ mqtt_listener.on("reconnect", function() { logme('info', 'MQTT Listener trying t
 
 mqtt_listener.on("message", function(topic_in, message_in) {
 	var topic, message
-    logme('debug','MQTT_MESSAGE_RECEIVED', {topic: topic_in , message: message_in.toString()};
+    logme('debug','MQTT_MESSAGE_RECEIVED', "topic: " + topic_in + ", message: " + message_in.toString());
 	/* if we run the the service-adapter as a message bridge between two MQTT
 	buses or different namespaces, we do not pipe these messages through an
 	external processor but instead rewrite the topic within the service-adapter
@@ -195,7 +199,7 @@ mqtt_listener.on("message", function(topic_in, message_in) {
 
 // Prints when connected to MQTT listener then makes subscriptions
 mqtt_listener.on("connect", (connack) => {
-    console.log('event => MQTT listener connected to: "' + mqtt_listener_url_object.href + '"');
+    logme("info", "MQTT Listener connected to", mqtt_listener_url_object.href);
     // checks if subscriptions.txt files exists
     if (fs.existsSync(subscriptions_txt)) {
         // Reads file subscriptions.txt line by line for MQTT topics the adapter should be subscribed to
@@ -258,10 +262,14 @@ function logme (level, description, message="") {
 	message_level_index = log_levels.findIndex(function(element, index, array) { return element === level });
     if (message_level_index <= log_level_index) {
 		log_object = generate_debug_message(level, description, message)
-		if (message_level_index <= 3) { process.stderr.write(level + ' => ' + description + ': ' + message + '\n') }
-		else { console.log(level + ' => ' + description + ': ' + message); }
+		if (message_level_index <= 3) {
+			process.stderr.write(level + ' => ' + description + ': ' + message + '\n')
+		}
+		else {
+			console.log(level + ' => ' + description + ': ' + message);
+		}
         if (mqtt_publisher.connected === true) {
-            mqtt_publisher.publish(log_object.topic, log_object.toString());
+            mqtt_publisher.publish(log_object.topic, JSON.stringify(log_object));
         }
     }
 }
