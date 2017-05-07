@@ -49,7 +49,7 @@ var listener_will_object = generate_debug_message("INFO", "last will", listener_
 var mqtt_listener = mqtt.connect(mqtt_listener_url_object, {
     username: mqtt_listener_credentials.username,
     password: mqtt_listener_credentials.password,
-	clientId: listener_client_id
+	clientId: listener_client_id,
     will: {
 		topic: listener_will_object.topic,
 		payload: listener_will_object.toString()
@@ -72,7 +72,7 @@ if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href && mqtt_lis
     var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, {
         username: mqtt_publisher_credentials.username,
         password: mqtt_publisher_credentials.password,
-		clientId: publisher_client_id
+		clientId: publisher_client_id,
         will: {
             topic: publisher_will_object.topic,
             payload: publisher_will_object.toString()
