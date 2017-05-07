@@ -72,16 +72,16 @@ var mqtt_listener = mqtt.connect(mqtt_listener_url_object, mqtt_listener_options
 		 payload: publisher_will_object.toString()
 	 }
  }
-if (fs.existsSync(mqtt_publisher_credentials)) {
-	var mqtt_publisher_credentials = require(mqtt_publisher_credentials)
+if (fs.existsSync(mqtt_publisher_credentials_file)) {
+	var mqtt_publisher_credentials = require(mqtt_publisher_credentials_file)
 	if (mqtt_publisher_credentials.username) mqtt_publisher_options.username = mqtt_publisher_credentials.username
 	if (mqtt_publisher_credentials.password) mqtt_publisher_options.password = mqtt_publisher_credentials.password
 }
-if (mqtt_listener_url_object.href === mqtt_publisher_url_object.href && mqtt_listener_credentials == mqtt_publisher_credentials) {
-    var mqtt_publisher = mqtt_listener;
-	logme("debug", "MQTT connection", "listener and publisher are equal")
-} else {
+if (mqtt_listener_url_object.href !== mqtt_publisher_url_object.href || mqtt_listener_credentials != mqtt_publisher_credentials) {
 	var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, mqtt_publisher_options);
+} else {
+	var mqtt_publisher = mqtt_listener;
+	logme("debug", "MQTT connection", "listener and publisher are equal")
 }
 
 /**
