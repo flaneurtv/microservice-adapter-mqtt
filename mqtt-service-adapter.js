@@ -181,6 +181,8 @@ mqtt_listener.on("message", function(topic_in, message_in) {
 			var message_object = JSON.parse(message_in.toString())
 			message_object.topic = topic
 			message = JSON.stringify(message_object)
+		} else {
+			message = message_in.toString() 
 		}
 		if (mqtt_publisher.connected === true) {
 	        mqtt_publisher.publish(topic, message);
