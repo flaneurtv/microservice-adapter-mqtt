@@ -211,6 +211,7 @@ mqtt_listener.on("connect", (connack) => {
         });
         // With each line of subscriptions.txt create a subscription for the adapter
         rl.on('line', function(line) {
+			line = line.trim()
             // checks it´s not an empty line
             if (line !== null && namespace_listener !== "null") {
                 // Subscribe to topic it uses namespace variable, subscriptions.txt file SHOULD NOT have the namespace defined.
