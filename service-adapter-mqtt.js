@@ -81,7 +81,7 @@ if (mqtt_listener_url_object.href !== mqtt_publisher_url_object.href || mqtt_lis
 	var mqtt_publisher = mqtt.connect(mqtt_publisher_url_object, mqtt_publisher_options);
 } else {
 	var mqtt_publisher = mqtt_listener;
-	logme("debug", "MQTT connection", "listener and publisher are equal")
+	logme("debug", "MQTT connection: listener and publisher are equal")
 }
 
 /**
@@ -90,7 +90,7 @@ if (mqtt_listener_url_object.href !== mqtt_publisher_url_object.href || mqtt_lis
  * but only, if we are not in BRIDGE mode
  */
 if (bridge !== "true") {
-	logme("info", "Spawning processor", service_processor);
+	logme("info", "Spawning processor: " + service_processor);
 	var processor;
 	// if processor is a javascript file, then use exec, otherwise use spawn
 	if (service_processor.substr(service_processor.lastIndexOf('.') + 1) === 'js') {
@@ -112,10 +112,10 @@ if (bridge !== "true") {
 			if (mqtt_publisher.connected === true) {
 		        mqtt_publisher.publish(processor_stdout_message.topic, line);
 		    }
-			logme("debug", "processor_stdout_message", line);
+			logme("debug", "processor_stdout_message: " + line);
 		}
 		catch(err) {
-	        logme('error', err + ' in processor_stdout_message', line);
+	        logme('error', err + ' in processor_stdout_message: ' + line);
 	    }
 	});
 
@@ -129,7 +129,8 @@ if (bridge !== "true") {
 	processor_stderr.on('line', (line) => {
 	    if (line !== null) {
 	        line = line.trim();
-	        logme('error','processor_stderr_message', line);
+					log_obj = JSON.parse(line);
+	        logme(log_obj.log_level,'processor_stderr_message: ' + log_obj.log_message);
 	    }
 	});
 	processor_stderr.on('SIGINT', () => { logme('info', "Processor STDERR readline SIGINT event emitted"); });
@@ -142,18 +143,18 @@ if (bridge !== "true") {
 	 * processor.on('close')
 	 */
 	 processor.on('exit', (code, signal) => {
-	     logme("info", "Processor EXIT event emitted", 'code ' + code + ' and signal ' + signal);
+	     logme("info", "Processor EXIT event emitted: " + 'code ' + code + ' and signal ' + signal);
 		 logme("info", "Processor.kill() initiated");
 	     processor.kill();
 	 });
 
 	processor.on('close', (code, signal) => {
-	    logme("info", "Processor CLOSE event emitted", 'code ' + code + ' and signal ' + signal);
+	    logme("info", "Processor CLOSE event emitted: " + 'code ' + code + ' and signal ' + signal);
 		exit_gracefully(0)
 	});
 
 	processor.on("error", function(error) {
-	    logme("info", "Processor ERROR event emitted", 'code ' + code + ' and signal ' + signal);
+	    logme("info", "Processor ERROR event emitted: " + 'code ' + code + ' and signal ' + signal);
 	    processor.kill();
 	});
 
@@ -162,12 +163,12 @@ if (bridge !== "true") {
 /**
  * MQTT Publisher event handlers
  */
-mqtt_listener.on("offline", function() { logme('info','MQTT Listener offline', mqtt_listener_url_object.href) });
-mqtt_listener.on("reconnect", function() { logme('info', 'MQTT Listener trying to reconnect to', mqtt_listener_url_object.href) });
+mqtt_listener.on("offline", function() { logme('info','MQTT Listener offline: ' + mqtt_listener_url_object.href) });
+mqtt_listener.on("reconnect", function() { logme('info', 'MQTT Listener trying to reconnect to: ' + mqtt_listener_url_object.href) });
 
 mqtt_listener.on("message", function(topic_in, message_in) {
 	var topic, message
-    logme('debug','MQTT_MESSAGE_RECEIVED', "topic: " + topic_in + ", message: " + message_in.toString());
+    logme('debug','MQTT_MESSAGE_RECEIVED: ' + "topic: " + topic_in + ", message: " + message_in.toString());
 	/* if we run the the service-adapter as a message bridge between two MQTT
 	buses or different namespaces, we do not pipe these messages through an
 	external processor but instead rewrite the topic within the service-adapter
@@ -187,22 +188,22 @@ mqtt_listener.on("message", function(topic_in, message_in) {
 		}
 		if (mqtt_publisher.connected === true) {
 	        mqtt_publisher.publish(topic, message);
-			logme("debug","MQTT message relayed through bridge", topic_in + " => " + topic)
-	    } else { logme("debug","MQTT message for bridge dropped", message) }
+			logme("debug","MQTT message relayed through bridge: " + topic_in + " => " + topic)
+		} else { logme("debug","MQTT message for bridge dropped: " + message) }
 	} else {
 		// Forwards message to processor
 		try {
 			message = JSON.stringify(JSON.parse(message_in.toString()))
 			processor.stdin.write(message + '\n');
 		} catch (e) {
-			logme("error", e, message_in.toString())
+			logme("error", e + message_in.toString())
 		}
 	}
 });
 
 // Prints when connected to MQTT listener then makes subscriptions
 mqtt_listener.on("connect", (connack) => {
-    logme("info", "MQTT Listener connected to", mqtt_listener_url_object.href);
+    logme("info", "MQTT Listener connected to " + mqtt_listener_url_object.href);
     // checks if subscriptions.txt files exists
     if (fs.existsSync(subscriptions_txt)) {
         // Reads file subscriptions.txt line by line for MQTT topics the adapter should be subscribed to
@@ -216,7 +217,7 @@ mqtt_listener.on("connect", (connack) => {
             if (line !== null && namespace_listener !== "null") {
                 // Subscribe to topic it uses namespace variable, subscriptions.txt file SHOULD NOT have the namespace defined.
                 mqtt_listener.subscribe(namespace_listener + '/' + line);
-                logme("info","Topic subscribed", namespace_listener + '/' + line);
+                logme("info","Topic subscribed " + namespace_listener + '/' + line);
             }
         });
     } else {
@@ -226,7 +227,7 @@ mqtt_listener.on("connect", (connack) => {
 
 // Prints error messages on the MQTT listener bus
 mqtt_listener.on("error", function(error) {
-    logme("error","MQTT Listener ERROR", error);
+    logme("error","MQTT Listener ERROR: " + error);
     if (error.code === 5) { // Error: MQTT Connection refused: Not authorized
         exit_gracefully(0);
     }
@@ -235,11 +236,11 @@ mqtt_listener.on("error", function(error) {
 /**
  * MQTT Publisher event handlers
  */
-mqtt_publisher.on("connect", (connack) => { logme('info','MQTT publisher connected to', mqtt_publisher_url_object.href) });
-mqtt_publisher.on("offline", function() { logme('info', 'MQTT Publisher offline', mqtt_publisher_url_object.href) });
-mqtt_publisher.on("reconnect", function() { logme("info", "MQTT Publisher trying to reconnect to", mqtt_publisher_url_object.href) });
+mqtt_publisher.on("connect", (connack) => { logme('info','MQTT publisher connected to ' + mqtt_publisher_url_object.href) });
+mqtt_publisher.on("offline", function() { logme('info', 'MQTT Publisher offline: ' + mqtt_publisher_url_object.href) });
+mqtt_publisher.on("reconnect", function() { logme("info", "MQTT Publisher trying to reconnect to " + mqtt_publisher_url_object.href) });
 mqtt_publisher.on("error", function(error) {
-    logme("error","ERROR publisher", error);
+    logme("error","ERROR publisher: " + error);
     if (error.code === 5) { // Error: MQTT Connection refused: Not authorized
         exit_gracefully(0)
     }
@@ -247,7 +248,7 @@ mqtt_publisher.on("error", function(error) {
 
 // Handles uncaughtException errors node exits gracefully on processor termination
 process.on('uncaughtException', function(error) {
-	logme("error", "uncaughtException", error);
+	logme("error", "uncaughtException: " + error);
 	exit_gracefully(0);
 });
 
@@ -259,36 +260,37 @@ function exit_gracefully(exit_code=0){
 	}, 100);
 }
 
-// Prints in console and publish on the MQTT bus log.
+// Prints in console and publishes on the MQTT bus log.
 // FIXME: ERROR messages need to go to stderr not stdout
-function logme (level, description, message="") {
+function logme (level, message) {
 	log_level_index = log_levels.findIndex(function(element, index, array) { return element === log_level });
 	message_level_index = log_levels.findIndex(function(element, index, array) { return element === level });
-    if (message_level_index <= log_level_index) {
-		log_object = generate_debug_message(level, description, message)
+  if (message_level_index <= log_level_index) {
+		log_object = generate_debug_message(level, message)
+		// log_messages ["emergency","alert","critical","error"] got to stderr
 		if (message_level_index <= 3) {
-			process.stderr.write(level + ' => ' + description + ': ' + message + '\n')
+			process.stderr.write(level ': ' + message + '\n');
 		}
+		// log_messages ["warning","notice","info","debug"] got to stdout
 		else {
-			console.log(level + ' => ' + description + ': ' + message);
+			process.stdout.write(level ': ' + message + '\n');
 		}
-        if (mqtt_publisher.connected === true) {
-            mqtt_publisher.publish(log_object.topic, JSON.stringify(log_object));
-        }
+    if (mqtt_publisher.connected === true) {
+        mqtt_publisher.publish(log_object.topic, JSON.stringify(log_object));
     }
+  }
 }
 
-function generate_debug_message(level, description, message){
+function generate_debug_message(level, message){
 	var message_object = {
-		topic: namespace_publisher + "/" + "log/" + level,
+		topic: namespace_publisher + "/log/" + service_name + '/' + service_uuid + '/' level,
 		service_name: service_name,
 		service_uuid: service_uuid,
 		service_host: service_host,
 		payload: {
-			log_message: {
+			log_entry: {
 				log_level: level,
-				description: description,
-				body: message
+				log_message: message
 			}
 		}
 	}
