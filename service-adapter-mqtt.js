@@ -283,7 +283,7 @@ function logme(level, message) {
 
 function generate_debug_message(level, message) {
 	var message_object = {
-		topic: namespace_publisher + '/log/' + service_name + '/' + service_uuid + '/' level,
+		topic: namespace_publisher + '/log/' + service_name + '/' + service_uuid + '/' + level,
 		service_name: service_name,
 		service_uuid: service_uuid,
 		service_host: service_host,
