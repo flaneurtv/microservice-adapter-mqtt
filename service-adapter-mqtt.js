@@ -262,18 +262,18 @@ function exit_gracefully(exit_code=0){
 
 // Prints in console and publishes on the MQTT bus log.
 // FIXME: ERROR messages need to go to stderr not stdout
-function logme (level, message) {
+function logme(level, message) {
 	log_level_index = log_levels.findIndex(function(element, index, array) { return element === log_level });
 	message_level_index = log_levels.findIndex(function(element, index, array) { return element === level });
   if (message_level_index <= log_level_index) {
-		log_object = generate_debug_message(level, message)
+		log_object = generate_debug_message(level, message);
 		// log_messages ["emergency","alert","critical","error"] got to stderr
 		if (message_level_index <= 3) {
-			process.stderr.write(level ': ' + message + '\n');
+			process.stderr.write(level + ': ' + message + '\n');
 		}
 		// log_messages ["warning","notice","info","debug"] got to stdout
 		else {
-			process.stdout.write(level ': ' + message + '\n');
+			process.stdout.write(level + ': ' + message + '\n');
 		}
     if (mqtt_publisher.connected === true) {
         mqtt_publisher.publish(log_object.topic, JSON.stringify(log_object));
@@ -281,9 +281,9 @@ function logme (level, message) {
   }
 }
 
-function generate_debug_message(level, message){
+function generate_debug_message(level, message) {
 	var message_object = {
-		topic: namespace_publisher + "/log/" + service_name + '/' + service_uuid + '/' level,
+		topic: namespace_publisher + '/log/' + service_name + '/' + service_uuid + '/' level,
 		service_name: service_name,
 		service_uuid: service_uuid,
 		service_host: service_host,
