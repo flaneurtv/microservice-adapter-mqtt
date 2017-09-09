@@ -42,7 +42,7 @@ var mqtt_publisher_url_object = url.parse(process.env.MQTT_PUBLISHER_URL || "tcp
  * Creates MQTT_LISTENER connection with credentials if available
  */
 var listener_client_id = service_name + "_" + service_host + "_" + service_uuid + "_listener"
-var listener_will_object = generate_debug_message("info", "last will", listener_client_id)
+var listener_will_object = generate_debug_message("info", "last will " + listener_client_id)
 var mqtt_listener_options = {
 	clientId: listener_client_id,
     will: {
@@ -64,7 +64,7 @@ var mqtt_listener = mqtt.connect(mqtt_listener_url_object, mqtt_listener_options
  * it will just use the LISTENER connection.
  */
  var publisher_client_id = service_name + "_" + service_host + "_" + service_uuid + "_publisher"
- var publisher_will_object = generate_debug_message("info", "last will", publisher_client_id)
+ var publisher_will_object = generate_debug_message("info", "last will" + publisher_client_id)
  var mqtt_publisher_options = {
 	 clientId: publisher_client_id,
 	 will: {
@@ -263,6 +263,7 @@ function exit_gracefully(exit_code=0){
 // Prints in console and publishes on the MQTT bus log.
 // FIXME: ERROR messages need to go to stderr not stdout
 function logme(level, message) {
+	level = level.toLowerCase()
 	log_level_index = log_levels.findIndex(function(element, index, array) { return element === log_level });
 	message_level_index = log_levels.findIndex(function(element, index, array) { return element === level });
   if (message_level_index <= log_level_index) {
