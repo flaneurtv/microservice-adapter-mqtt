@@ -45,7 +45,8 @@ The service adapter acts as a translator between the JSON-pipe-protocol and the 
 The service adapter is parametrized at start-up with a list of topics, it should subscribe to. It also implements message verification and error handling (and jwt securtiy features in the future).
 
 #### To sum that up, here is what the service adapter does: ####
-* starts up the service-processor as a long-running subprocess 
+* starts up the service-processor as a long-running subprocess
+* establishes pipes to the subprocesses stdin, stdout, stderr
 * subscribes to MQTT topics
 * receives MQTT messages
 * forwards these messages to service-processors stdin
