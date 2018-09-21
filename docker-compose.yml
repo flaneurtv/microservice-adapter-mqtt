@@ -1,0 +1,63 @@
+# This docker-compose.yml is for demonstration purposes. If you run 
+# docker-compose build && docker-compose up, you will have a local mosquitto 
+# mqtt server running and a ticker microservice, which is using the 
+# microservice-adapter-mqtt connected to it, publishing a tick message every 
+# 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these 
+# messages.
+version: '3'
+services:
+  microservice-adapter-mqtt:
+    build: .
+    image: flaneurtv/microservice-adapter-mqtt
+    command: ["true"]
+  ticker:
+    depends_on: 
+      - microservice-adapter-mqtt
+      - mqtt
+    build: ./examples/ticker
+    image: flaneurtv/microservice-ticker
+    environment:
+      - "DEBUG=true"
+      - "NAMESPACE=default"
+#      - "MQTT_PUBLISHER_URL=tcp://m20.cloudmqtt.com:13701"
+#      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+#      - "MQTT_PUBLISHER_URL=tcp://iot.eclipse.org:1883"
+#      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
+#    volumes:
+#      - ./local/mqtt_listener.json:/run/secrets/mqtt_listener.json
+#      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
+    networks:
+      - service-network
+  tick-responder:
+    depends_on: 
+      - microservice-adapter-mqtt
+      - mqtt
+    build: ./examples/tick-responder
+    image: flaneurtv/microservice-tick-responder
+    environment:
+      - "DEBUG=true"
+      - "NAMESPACE=default"
+#      - "MQTT_PUBLISHER_URL=tcp://m20.cloudmqtt.com:13701"
+#      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+#      - "MQTT_PUBLISHER_URL=tcp://iot.eclipse.org:1883"
+#      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
+#    volumes:
+#      - ./local/mqtt_listener.json:/run/secrets/mqtt_listener.json
+#      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
+    networks:
+      - service-network
+  mqtt:
+    image: eclipse-mosquitto
+    ports:
+     - "1883:1883"
+     - "9001:9001"
+    networks:
+      - service-network
+    volumes:
+      - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+networks:
+  service-network:
