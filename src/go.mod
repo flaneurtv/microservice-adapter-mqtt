@@ -14,6 +14,7 @@ require (
 	github.com/surgemq/surgemq v0.0.0-20160220020121-c88a02e0d607
 	github.com/tidwall/gjson v1.1.3
 	github.com/tidwall/match v0.0.0-20171002075945-1731857f09b1 // indirect
+	github.com/tidwall/sjson v1.0.2
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b // indirect
 	golang.org/x/net v0.0.0-20180921000356-2f5d2388922f // indirect
 	golang.org/x/sys v0.0.0-20180921163948-d47a0f339242 // indirect

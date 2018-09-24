@@ -56,7 +56,7 @@ func TestAdapter(t *testing.T) {
 	assert.Equal(t, `{"topic": "tick-response", "payload": 3}`, service2.outputMessages[2])
 }
 
-func TestConnectError(t *testing.T) {
+func TestAdapterConnectError(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
 	client1.forceConnectError = true
@@ -81,7 +81,7 @@ func TestConnectError(t *testing.T) {
 	assert.Equal(t, "can't connect: connect error", err.Error())
 }
 
-func TestSubscribeError(t *testing.T) {
+func TestAdapterSubscribeError(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
 	client1.forceSubscribeError = true
@@ -93,7 +93,7 @@ func TestSubscribeError(t *testing.T) {
 	assert.Equal(t, "can't subscribe: subscribe error", err.Error())
 }
 
-func TestStartError(t *testing.T) {
+func TestAdapterStartError(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
 	service1 := NewMockServiceProducer(make(chan string))
@@ -124,6 +124,12 @@ func (b *mockBus) Publish(topic, message string) {
 		if strings.Contains(topics, key) {
 			messages <- message
 		}
+	}
+}
+
+func (b *mockBus) close() {
+	for _, messages := range b.subscribers {
+		close(messages)
 	}
 }
 
