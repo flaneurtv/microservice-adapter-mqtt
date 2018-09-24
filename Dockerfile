@@ -1,27 +1,25 @@
-FROM golang:1.11-alpine3.8
+FROM golang:1.11
 # Use this as a base to copy /usr/local/bin/microservice-adapter-mqtt from to 
 # be used in your multistage microservice builds.
 
-ENV TARGET_NAME microservice-adapter-mqtt
-ENV TARGET_PATH /usr/local/bin/$TARGET_NAME
-ENV packages   ./adapter \
-    			./config \
-    			./logger \
-    			./mqtt
+ENV TARGET_ADAPTER_NAME microservice-adapter-mqtt
+ENV TARGET_ADAPTER_PATH /usr/local/bin/$TARGET_ADAPTER_NAME
 
-RUN apk add --no-cache glide curl git make g++ \
-  && curl -L https://git.io/vp6lP | sh \
-  && apk add --no-cache bash jq gettext util-linux
+ENV TARGET_BRIDGE_NAME microservice-bridge-mqtt
+ENV TARGET_BRIDGE_PATH /usr/local/bin/$TARGET_BRIDGE_NAME
 
-RUN go get github.com/Masterminds/glide
-
-COPY src /go/src/mqtt-adapter/src
+COPY src /mqtt-adapter/src
 COPY examples/. /srv/.
 
-WORKDIR /go/src/mqtt-adapter/src
+WORKDIR /mqtt-adapter/src
 
-RUN glide install
-RUN for package in $packages; do go test -cover -covermode=count $package; done
-RUN GOOS=linux GOARCH=amd64 go build -o  $TARGET_PATH
+RUN go test -cover ./...
+RUN GOOS=linux GOARCH=amd64 go build -ldflags "-linkmode external -extldflags -static" -o $TARGET_ADAPTER_PATH -a ./cmd/adapter
+RUN GOOS=linux GOARCH=amd64 go build -ldflags "-linkmode external -extldflags -static" -o $TARGET_BRIDGE_PATH -a ./cmd/bridge
+
+FROM scratch
+
+COPY --from=0 $TARGET_ADAPTER_PATH $TARGET_ADAPTER_PATH
+COPY --from=0 $TARGET_BRIDGE_PATH $TARGET_BRIDGE_PATH
 
 CMD ["microservice-adapter-mqtt"]

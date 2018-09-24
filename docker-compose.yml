@@ -9,7 +9,6 @@ services:
   microservice-adapter-mqtt:
     build: .
     image: flaneurtv/microservice-adapter-mqtt
-    command: ["true"]
   ticker:
     depends_on: 
       - microservice-adapter-mqtt
