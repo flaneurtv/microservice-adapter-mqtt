@@ -11,22 +11,24 @@ import (
 )
 
 type service struct {
-	name      string
-	uuid      string
-	host      string
-	namespace string
-	cmdLine   string
-	logger    core.Logger
+	name               string
+	uuid               string
+	host               string
+	namespaceListener  string
+	namespacePublisher string
+	cmdLine            string
+	logger             core.Logger
 }
 
-func NewService(name, uuid, host, namespace, cmdLine string, logger core.Logger) core.Service {
+func NewService(name, uuid, host, namespaceListener, namespacePublisher, cmdLine string, logger core.Logger) core.Service {
 	return &service{
-		name:      name,
-		uuid:      uuid,
-		host:      host,
-		namespace: namespace,
-		cmdLine:   cmdLine,
-		logger:    logger,
+		name:               name,
+		uuid:               uuid,
+		host:               host,
+		namespaceListener:  namespaceListener,
+		namespacePublisher: namespacePublisher,
+		cmdLine:            cmdLine,
+		logger:             logger,
 	}
 }
 
@@ -36,7 +38,8 @@ func (sp *service) Start(input <-chan string) (output <-chan string, err error) 
 	cmd.Env = []string{fmt.Sprintf("SERVICE_NAME=%s", sp.name),
 		fmt.Sprintf("SERVICE_UUID=%s", sp.uuid),
 		fmt.Sprintf("SERVICE_HOST=%s", sp.host),
-		fmt.Sprintf("NAMESPACE=%s", sp.namespace),
+		fmt.Sprintf("NAMESPACE_LISTENER=%s", sp.namespaceListener),
+		fmt.Sprintf("NAMESPACE_PUBLISHER=%s", sp.namespacePublisher),
 	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
 

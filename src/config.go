@@ -6,7 +6,6 @@ type Configuration interface {
 	ServiceHost() string
 	ServiceCmdLine() string
 
-	Namespace() string
 	NamespaceListener() string
 	NamespacePublisher() string
 

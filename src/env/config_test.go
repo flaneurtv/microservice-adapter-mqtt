@@ -48,7 +48,6 @@ func TestCorrectConfig(t *testing.T) {
 	assert.NotEmpty(t, cfg.ServiceUUID())
 	assert.NotEmpty(t, cfg.ServiceHost())
 	assert.Equal(t, "./my/service run", cfg.ServiceCmdLine())
-	assert.Equal(t, "root", cfg.Namespace())
 	assert.Equal(t, "master", cfg.NamespaceListener())
 	assert.Equal(t, "root", cfg.NamespacePublisher())
 	assert.Equal(t, "tcp://mqtt.com:111", cfg.ListenerURL())
@@ -86,7 +85,6 @@ func TestDefaultNamespace(t *testing.T) {
 
 	cfg, err := env.NewConfig()
 	assert.Nil(t, err)
-	assert.Equal(t, "default", cfg.Namespace())
 	assert.Equal(t, "default", cfg.NamespaceListener())
 	assert.Equal(t, "default", cfg.NamespacePublisher())
 	assert.Equal(t, []string{"default/test", "default/clean", "default/good"}, cfg.Subscriptions())

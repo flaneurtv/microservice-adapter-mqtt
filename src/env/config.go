@@ -23,7 +23,6 @@ type config struct {
 	serviceHost    string
 	serviceCmdLine string
 
-	namespace          string
 	namespaceListener  string
 	namespacePublisher string
 
@@ -80,7 +79,6 @@ func NewConfig() (core.Configuration, error) {
 		serviceUUID:          serviceUUID,
 		serviceHost:          serviceHost,
 		serviceCmdLine:       serviceCmdLine,
-		namespace:            namespace,
 		namespaceListener:    namespaceListener,
 		namespacePublisher:   namespacePublisher,
 		listenerURL:          listenerURL,
@@ -105,10 +103,6 @@ func (cfg *config) ServiceHost() string {
 
 func (cfg *config) ServiceCmdLine() string {
 	return cfg.serviceCmdLine
-}
-
-func (cfg *config) Namespace() string {
-	return cfg.namespace
 }
 
 func (cfg *config) NamespaceListener() string {

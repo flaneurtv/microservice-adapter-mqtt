@@ -37,7 +37,7 @@ func main() {
 `)
 	scriptFile.Close()
 
-	sp := process.NewService("process1", "uuid1", "host1", "namespace1", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
+	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
 	output, err := sp.Start(input)
@@ -85,7 +85,7 @@ func main() {
 `)
 	scriptFile.Close()
 
-	sp := process.NewService("process1", "uuid1", "host1", "namespace1", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
+	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
 	output, err := sp.Start(input)
@@ -109,7 +109,7 @@ func main() {
 }
 
 func TestInvalidScript(t *testing.T) {
-	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "qwerty123098 run", logger.NewNoOpLogger())
+	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", "qwerty123098 run", logger.NewNoOpLogger())
 
 	input := make(chan string)
 	_, err := sp.Start(input)
@@ -147,7 +147,7 @@ func main() {
 `)
 	scriptFile.Close()
 
-	sp := process.NewService("process1", "uuid1", "host1", "namespace1", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
+	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
 	output, err := sp.Start(input)
@@ -171,5 +171,54 @@ func main() {
 		} else {
 			assert.False(t, ok)
 		}
+	}
+}
+
+func TestSscriptEnvironment(t *testing.T) {
+	scriptFile, _ := ioutil.TempFile("", "script*.go")
+	defer os.Remove(scriptFile.Name())
+
+	scriptFile.WriteString(`package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func main() {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			break
+		}
+		fmt.Println(os.Getenv(strings.TrimSpace(line)))
+	}
+}
+`)
+	scriptFile.Close()
+
+	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
+
+	input := make(chan string)
+	output, err := sp.Start(input)
+
+	assert.Nil(t, err)
+	assert.NotNil(t, output)
+
+	values := []string{"SERVICE_NAME", "SERVICE_UUID", "SERVICE_HOST", "NAMESPACE_LISTENER", "NAMESPACE_PUBLISHER"}
+
+	go func() {
+		for _, value := range values {
+			input <- value
+		}
+	}()
+
+	expectedValues := []string{"process1", "uuid1", "host1", "namespace1", "namespace2"}
+	for _, value := range expectedValues {
+		outValue := <-output
+		assert.Equal(t, value, outValue)
 	}
 }

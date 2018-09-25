@@ -28,7 +28,7 @@ func main() {
 		publisher = listener
 	}
 
-	service := process.NewService(cfg.ServiceName(), cfg.ServiceUUID(), cfg.ServiceHost(), cfg.Namespace(), cfg.ServiceCmdLine(), log)
+	service := process.NewService(cfg.ServiceName(), cfg.ServiceUUID(), cfg.ServiceHost(), cfg.NamespaceListener(), cfg.NamespacePublisher(), cfg.ServiceCmdLine(), log)
 
 	adapter := core.NewAdapter(listener, publisher, cfg.Subscriptions(), service, log)
 	done, err := adapter.Start()
