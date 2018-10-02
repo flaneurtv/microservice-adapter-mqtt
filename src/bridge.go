@@ -38,11 +38,15 @@ func (b *Bridge) Start() (<-chan struct{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("can't connect: %s", err)
 		}
+	} else {
+		b.logger.Debug("MQTT connection: listener and publisher are equal")
 	}
 
 	inputMessages, err := b.listener.Subscribe(b.subscriptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't subscribe: %s", err)
+	} else {
+		b.logger.Info(fmt.Sprintf("Topics subscribed: %s", strings.Join(b.subscriptions, ", ")))
 	}
 
 	done := make(chan struct{})
@@ -59,7 +63,9 @@ func (b *Bridge) Start() (<-chan struct{}, error) {
 
 			err := b.publisher.Publish(topic, msg)
 			if err != nil {
-				b.logger.Error("can't publish", err)
+				b.logger.Error(fmt.Sprintf("MQTT message for bridge dropped: %s", msg), err)
+			} else {
+				b.logger.Debug(fmt.Sprintf("MQTT message relayed through bridge: %s => %s", inpTopic, topic))
 			}
 		}
 	}()

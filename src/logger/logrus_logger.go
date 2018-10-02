@@ -19,6 +19,14 @@ func NewLogger() core.Logger {
 	}
 }
 
+func (logger *logrusLogger) SetLevel(level string) {
+	parsedLevel, err := logrus.ParseLevel(level)
+	if err != nil {
+		parsedLevel = logrus.ErrorLevel
+	}
+	logger.log.SetLevel(parsedLevel)
+}
+
 func (logger *logrusLogger) Debug(message string) {
 	logger.log.Debugln(message)
 }
