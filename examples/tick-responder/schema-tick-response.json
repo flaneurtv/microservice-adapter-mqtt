@@ -1,5 +1,5 @@
 {
-  "topic": "$NAMESPACE/log/tick_response",
+  "topic": "$NAMESPACE_PUBLISHER/log/tick_response",
   "service_uuid": "$SERVICE_UUID",
   "service_name": "$SERVICE_NAME",
   "service_host": "$SERVICE_HOST",
