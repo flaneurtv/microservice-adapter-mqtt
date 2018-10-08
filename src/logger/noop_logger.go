@@ -9,6 +9,9 @@ func NewNoOpLogger() core.Logger {
 	return &noopLogger{}
 }
 
+func (*noopLogger) SetLevel(level string) {
+}
+
 func (*noopLogger) Debug(message string) {
 }
 

@@ -66,7 +66,10 @@ func (sp *service) Start(input <-chan string) (output <-chan string, err error) 
 func (sp *service) startWriteToStdin(stdin io.WriteCloser, input <-chan string) {
 	go func() {
 		for line := range input {
-			stdin.Write([]byte(line + "\n"))
+			_, err := stdin.Write([]byte(line + "\n"))
+			if err != nil {
+				sp.logger.Error(line, err)
+			}
 		}
 	}()
 }

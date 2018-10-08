@@ -6,6 +6,7 @@ import (
 	"github.com/surgemq/surgemq/auth"
 	"github.com/surgemq/surgemq/service"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/mqtt"
 	"testing"
 	"time"
@@ -16,15 +17,15 @@ func TestClients(t *testing.T) {
 	srv := startMockMQTTServer(mqttURL)
 	defer srv.Close()
 
-	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{})
+	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger())
 	err := client1.Connect()
 	assert.Nil(t, err)
 
-	client2 := mqtt.NewMQTTClient(mqttURL, "client2", core.Credentials{})
+	client2 := mqtt.NewMQTTClient(mqttURL, "client2", core.Credentials{}, logger.NewNoOpLogger())
 	err = client2.Connect()
 	assert.Nil(t, err)
 
-	client3 := mqtt.NewMQTTClient(mqttURL, "client3", core.Credentials{})
+	client3 := mqtt.NewMQTTClient(mqttURL, "client3", core.Credentials{}, logger.NewNoOpLogger())
 	err = client3.Connect()
 	assert.Nil(t, err)
 
@@ -65,15 +66,15 @@ func TestCredentials(t *testing.T) {
 	srv.Authenticator = "test_auth"
 	defer srv.Close()
 
-	client := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{})
+	client := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger())
 	err := client.Connect()
 	assert.NotNil(t, err)
 
-	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user123", Password: "password123"})
+	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user123", Password: "password123"}, logger.NewNoOpLogger())
 	err = client.Connect()
 	assert.Nil(t, err)
 
-	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user555", Password: "password555"})
+	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user555", Password: "password555"}, logger.NewNoOpLogger())
 	err = client.Connect()
 	assert.NotNil(t, err)
 }

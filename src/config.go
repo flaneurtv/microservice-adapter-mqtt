@@ -15,6 +15,8 @@ type Configuration interface {
 	PublisherCredentials() Credentials
 
 	Subscriptions() []string
+
+	LogLevel() string
 }
 
 type Credentials struct {

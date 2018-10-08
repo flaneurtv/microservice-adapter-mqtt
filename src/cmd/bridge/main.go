@@ -11,18 +11,30 @@ import (
 func main() {
 	log := logger.NewLogger()
 
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				log.Error("uncaughtException", err)
+			} else {
+				log.Error(fmt.Sprintf("uncaughtException: %s", r), nil)
+			}
+		}
+	}()
+
 	cfg, err := env.NewConfig()
 	if err != nil {
 		log.Panic("can't create config", err)
 	}
 
+	log.SetLevel(cfg.LogLevel())
+
 	listenerClientID := fmt.Sprintf("%s_%s_%s_listener", cfg.ServiceName(), cfg.ServiceHost(), cfg.ServiceUUID())
-	listener := mqtt.NewMQTTClient(cfg.ListenerURL(), listenerClientID, cfg.ListenerCredentials())
+	listener := mqtt.NewMQTTClient(cfg.ListenerURL(), listenerClientID, cfg.ListenerCredentials(), log)
 
 	var publisher core.MessageBusClient
 	if cfg.ListenerURL() != cfg.PublisherURL() || cfg.ListenerCredentials() != cfg.PublisherCredentials() {
 		publisherClientID := fmt.Sprintf("%s_%s_%s_publisher", cfg.ServiceName(), cfg.ServiceHost(), cfg.ServiceUUID())
-		publisher = mqtt.NewMQTTClient(cfg.PublisherURL(), publisherClientID, cfg.PublisherCredentials())
+		publisher = mqtt.NewMQTTClient(cfg.PublisherURL(), publisherClientID, cfg.PublisherCredentials(), log)
 	} else {
 		publisher = listener
 	}

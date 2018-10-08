@@ -32,6 +32,8 @@ type config struct {
 	publisherCredentials core.Credentials
 
 	subscriptions []string
+
+	logLevel string
 }
 
 func NewConfig() (core.Configuration, error) {
@@ -74,6 +76,15 @@ func NewConfig() (core.Configuration, error) {
 		return nil, err
 	}
 
+	logLevel := strings.ToLower(os.Getenv("LOG_LEVEL"))
+	if logLevel == "" {
+		logLevel = "error"
+	}
+	debug := strings.ToLower(os.Getenv("DEBUG")) == "true"
+	if debug {
+		logLevel = "debug"
+	}
+
 	return &config{
 		serviceName:          serviceName,
 		serviceUUID:          serviceUUID,
@@ -86,6 +97,7 @@ func NewConfig() (core.Configuration, error) {
 		publisherURL:         publisherURL,
 		publisherCredentials: publisherCredentials,
 		subscriptions:        subscriptions,
+		logLevel:             logLevel,
 	}, nil
 }
 
@@ -131,6 +143,10 @@ func (cfg *config) PublisherCredentials() core.Credentials {
 
 func (cfg *config) Subscriptions() []string {
 	return cfg.subscriptions
+}
+
+func (cfg *config) LogLevel() string {
+	return cfg.logLevel
 }
 
 func readSubscriptions(subscriptionsPath, namespace string) ([]string, error) {

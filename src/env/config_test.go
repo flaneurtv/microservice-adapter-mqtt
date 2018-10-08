@@ -20,15 +20,15 @@ func TestCorrectConfig(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"SERVICE_NAME":               "MyService",
@@ -39,7 +39,7 @@ func TestCorrectConfig(t *testing.T) {
 		"MQTT_PUBLISHER_URL":         "tcp://mqtt.com:222",
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscribersFile.Name(),
+		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
 	cfg, err := env.NewConfig()
@@ -55,6 +55,7 @@ func TestCorrectConfig(t *testing.T) {
 	assert.Equal(t, core.Credentials{UserName: "user111", Password: "password111"}, cfg.ListenerCredentials())
 	assert.Equal(t, core.Credentials{UserName: "user222", Password: "password222"}, cfg.PublisherCredentials())
 	assert.Equal(t, []string{"master/test", "master/clean", "master/good"}, cfg.Subscriptions())
+	assert.Equal(t, "error", cfg.LogLevel())
 }
 
 func TestDefaultNamespace(t *testing.T) {
@@ -67,20 +68,20 @@ func TestDefaultNamespace(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscribersFile.Name(),
+		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
 	cfg, err := env.NewConfig()
@@ -97,17 +98,17 @@ func TestEmptyListenerCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscribersFile.Name(),
+		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
 	_, err := env.NewConfig()
@@ -121,17 +122,17 @@ func TestEmptyPublisherCredentials(t *testing.T) {
 	listenerCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(listenerCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS": listenerCredentialsFile.Name(),
-		"SUBSCRIPTIONS":             subscribersFile.Name(),
+		"SUBSCRIPTIONS":             subscriptionsFile.Name(),
 	})
 
 	_, err := env.NewConfig()
@@ -145,41 +146,41 @@ func TestMissingPublisherCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name() + uuid.NewV4().String(),
-		"SUBSCRIPTIONS":              subscribersFile.Name(),
+		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
 	_, err := env.NewConfig()
 	assert.NotNil(t, err)
 }
 
-func TestMissingListsenerCredentials(t *testing.T) {
+func TestMissingListenerCredentials(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
 	listenerCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(listenerCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS": listenerCredentialsFile.Name() + uuid.NewV4().String(),
-		"SUBSCRIPTIONS":             subscribersFile.Name(),
+		"SUBSCRIPTIONS":             subscriptionsFile.Name(),
 	})
 
 	_, err := env.NewConfig()
@@ -220,24 +221,59 @@ func TestCorruptedCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscribersFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscribersFile.Name())
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"`)
 	publisherCredentialsFile.Close()
-	subscribersFile.WriteString("test\nclean\ngood\n")
-	subscribersFile.Close()
+	subscriptionsFile.WriteString("test\nclean\ngood\n")
+	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscribersFile.Name(),
+		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
 	_, err := env.NewConfig()
 	assert.NotNil(t, err)
+}
+
+func TestLogLevel(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
+
+	setEnv(map[string]string{
+		"SUBSCRIPTIONS": subscriptionsFile.Name(),
+		"LOG_LEVEL":     "warning",
+	})
+
+	cfg, err := env.NewConfig()
+	assert.Nil(t, err)
+	assert.Equal(t, "warning", cfg.LogLevel())
+}
+
+func TestDebugLogLevel(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
+
+	setEnv(map[string]string{
+		"SUBSCRIPTIONS": subscriptionsFile.Name(),
+		"LOG_LEVEL":     "warning",
+		"DEBUG":         "true",
+	})
+
+	cfg, err := env.NewConfig()
+	assert.Nil(t, err)
+	assert.Equal(t, "debug", cfg.LogLevel())
 }
 
 func setEnv(env map[string]string) {
@@ -257,4 +293,6 @@ func clearEnv() {
 	os.Unsetenv("MQTT_LISTENER_CREDENTIALS")
 	os.Unsetenv("MQTT_PUBLISHER_CREDENTIALS")
 	os.Unsetenv("SUBSCRIPTIONS")
+	os.Unsetenv("DEBUG")
+	os.Unsetenv("LOG_LEVEL")
 }
