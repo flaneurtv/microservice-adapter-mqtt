@@ -1,0 +1,23 @@
+FROM flaneurtv/microservice-adapter-mqtt as adapter
+# We will be copying /usr/local/bin/microservice-adapter-mqtt from this image.
+
+FROM alpine:3.8
+# This demo service sends a tick message every 3 seconds. Use it as a blueprint
+# for your own microservices using this adapter. It is recommended, to set ENV 
+# vars for everything specific to this service 
+# (SEVICE_NAME, SERVICE_PROCESSOR, SUBSCRIPTIONS) right here and infrastructure 
+# specific settings (MQTT_LISTENER_URL, auth credentials, ...) in 
+# docker-compose.yml and thelike.
+
+ENV SERVICE_NAME=test-sender
+ENV SERVICE_PROCESSOR=/srv/test-sender/processor
+ENV SUBSCRIPTIONS=/srv/test-sender/subscriptions.txt
+
+RUN apk add --no-cache bash jq gettext util-linux coreutils
+
+COPY --from=adapter /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
+
+WORKDIR /srv/test-sender/
+COPY . .
+
+CMD ["microservice-adapter-mqtt"]

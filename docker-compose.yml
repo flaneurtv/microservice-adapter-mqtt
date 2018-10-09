@@ -16,7 +16,7 @@ services:
     build: ./examples/ticker
     image: flaneurtv/microservice-ticker
     environment:
-      - "DEBUG=true"
+      - "DEBUG=false"
       - "NAMESPACE_LISTENER=default"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
@@ -37,6 +37,27 @@ services:
       - mqtt
     build: ./examples/tick-responder
     image: flaneurtv/microservice-tick-responder
+    environment:
+      - "DEBUG=false"
+      - "NAMESPACE_LISTENER=flaneur"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+#      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
+#      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
+      - "NAMESPACE_PUBLISHER=test"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+#      - "MQTT_PUBLISHER_URL=tcp://m20.cloudmqtt.com:13701"
+#      - "MQTT_PUBLISHER_URL=tcp://iot.eclipse.org:1883"
+#    volumes:
+#      - ./local/mqtt_listener.json:/run/secrets/mqtt_listener.json
+#      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
+    networks:
+      - service-network
+  error-ticker:
+    depends_on: 
+      - microservice-adapter-mqtt
+      - mqtt
+    build: ./examples/error-ticker
+    image: flaneurtv/microservice-error-ticker
     environment:
       - "DEBUG=true"
       - "NAMESPACE_LISTENER=flaneur"
@@ -78,7 +99,7 @@ services:
     build: ./examples/bridge-tick
     image: flaneurtv/microservice-bridge-tick
     environment:
-      - "DEBUG=true"
+      - "DEBUG=false"
       - "NAMESPACE_LISTENER=flaneur"
       - "NAMESPACE_PUBLISHER=bridged"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
@@ -100,7 +121,7 @@ services:
     build: ./examples/bridge-tick-responder
     image: flaneurtv/microservice-bridge-tick-responder
     environment:
-      - "DEBUG=true"
+      - "DEBUG=false"
       - "NAMESPACE_LISTENER=test"
       - "NAMESPACE_PUBLISHER=bridged"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
