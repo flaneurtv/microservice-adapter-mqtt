@@ -1,3 +1,4 @@
+sleep 1
 {"log_level": "debug", "log_message": "string: \"double quotes\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
 {"log_level": "info", "log_message": "string: \"double quotes\" to escape", "created_at": "$CREATED_AT"}
@@ -7,3 +8,5 @@ sleep 1
 {"log_level": "error", "log_message": "string: \"double quotes\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
 {"log_level": "critical", "log_message": "string: \"double quotes\" to escape", "created_at": "$CREATED_AT"}
+sleep 1
+Messages not being JSON should be treated as if they are "debug" messages.

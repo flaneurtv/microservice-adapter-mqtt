@@ -23,6 +23,8 @@ services:
       - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
     networks:
       - service-network
+    volumes:
+      - ./examples/test-sender/:/srv/test-sender/
   mqtt:
     image: eclipse-mosquitto
     ports:
