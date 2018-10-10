@@ -36,17 +36,17 @@ func (a *Adapter) Start() (<-chan struct{}, error) {
 			return nil, fmt.Errorf("can't connect: %s", err)
 		}
 	} else {
-		a.logger.Debug("MQTT connection: listener and publisher are equal")
+		a.logger.Log(LogLevelDebug, "MQTT connection: listener and publisher are equal")
 	}
 
 	inputMessages, err := a.listener.Subscribe(a.subscriptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't subscribe: %s", err)
 	} else {
-		a.logger.Info(fmt.Sprintf("Topics subscribed: %s", strings.Join(a.subscriptions, ", ")))
+		a.logger.Log(LogLevelInfo, fmt.Sprintf("Topics subscribed: %s", strings.Join(a.subscriptions, ", ")))
 	}
 
-	outputMessages, err := a.service.Start(inputMessages)
+	outputMessages, errorMessages, err := a.service.Start(inputMessages)
 	if err != nil {
 		return nil, fmt.Errorf("can't start a service: %s", err)
 	}
@@ -55,13 +55,45 @@ func (a *Adapter) Start() (<-chan struct{}, error) {
 	go func() {
 		defer close(done)
 
-		for msg := range outputMessages {
-			topic := gjson.Get(msg, "topic").String()
-			err := a.publisher.Publish(topic, msg)
-			if err != nil {
-				a.logger.Error("can't publish", err)
-			} else {
-				a.logger.Debug(fmt.Sprintf("published: %s", msg))
+	LOOP:
+		for {
+			select {
+			case msg, ok := <-outputMessages:
+				if !ok {
+					break LOOP
+				}
+
+				if gjson.Valid(msg) {
+					topic := gjson.Get(msg, "topic").String()
+					if topic != "" {
+						err := a.publisher.Publish(topic, msg)
+						if err != nil {
+							a.logger.Log(LogLevelError, fmt.Sprintf("can't publish: %s", err))
+						} else {
+							a.logger.Log(LogLevelDebug, fmt.Sprintf("published: %s", msg))
+						}
+					} else {
+						a.logger.Log(LogLevelError, fmt.Sprintf("missing topic: %s", msg))
+					}
+				} else {
+					a.logger.Log(LogLevelError, fmt.Sprintf("invalid json: %s", msg))
+				}
+			case msg, ok := <-errorMessages:
+				if !ok {
+					break LOOP
+				}
+
+				logLevel := LogLevelDebug
+				message := msg
+				if gjson.Valid(msg) {
+					message = gjson.Get(msg, "log_message").String()
+					if message == "" {
+						message = msg
+					} else {
+						logLevel, _ = ParseLogLevel(gjson.Get(msg, "log_level").String())
+					}
+				}
+				a.logger.Log(logLevel, message)
 			}
 		}
 	}()

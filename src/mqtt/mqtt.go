@@ -10,17 +10,21 @@ type mqttClient struct {
 	client mqtt.Client
 }
 
-func NewMQTTClient(busURL, clientID string, credentials core.Credentials, logger core.Logger) core.MessageBusClient {
+func NewMQTTClient(busURL, clientID string, credentials core.Credentials, logger core.Logger, onConnectionLost func(err error)) core.MessageBusClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(busURL)
 	opts.SetClientID(clientID)
 	opts.Username = credentials.UserName
 	opts.Password = credentials.Password
+	opts.AutoReconnect = false
 	opts.OnConnect = func(client mqtt.Client) {
-		logger.Info(fmt.Sprintf("MQTT client connected to %s", busURL))
+		logger.Log(core.LogLevelInfo, fmt.Sprintf("MQTT client connected to %s", busURL))
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
-		logger.Info(fmt.Sprintf("MQTT client lost connection to %s: %s", busURL, err))
+		logger.Log(core.LogLevelInfo, fmt.Sprintf("MQTT client lost connection to %s: %s", busURL, err))
+		if onConnectionLost != nil {
+			onConnectionLost(err)
+		}
 	}
 
 	client := mqtt.NewClient(opts)

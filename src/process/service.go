@@ -32,7 +32,7 @@ func NewService(name, uuid, host, namespaceListener, namespacePublisher, cmdLine
 	}
 }
 
-func (sp *service) Start(input <-chan string) (output <-chan string, err error) {
+func (sp *service) Start(input <-chan string) (output <-chan string, errors <-chan string, err error) {
 	parts := strings.Fields(sp.cmdLine)
 	cmd := exec.Command(parts[0], parts[1:]...)
 	cmd.Env = []string{fmt.Sprintf("SERVICE_NAME=%s", sp.name),
@@ -45,41 +45,47 @@ func (sp *service) Start(input <-chan string) (output <-chan string, err error) 
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		return nil, fmt.Errorf("can't get stdin: %s", err)
+		return nil, nil, fmt.Errorf("can't get stdin: %s", err)
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("can't get stdout: %s", err)
+		return nil, nil, fmt.Errorf("can't get stdout: %s", err)
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't get stderr: %s", err)
 	}
 
 	err = cmd.Start()
 	if err != nil {
-		return nil, fmt.Errorf("can't start command: %s", err)
+		return nil, nil, fmt.Errorf("can't start command: %s", err)
 	}
 
-	sp.startWriteToStdin(stdin, input)
-	output = sp.startReadFromStdout(stdout)
-	return output, nil
+	sp.startWriteTo(stdin, input)
+	output = sp.startReadFrom(stdout)
+	errors = sp.startReadFrom(stderr)
+	return output, errors, nil
 }
 
-func (sp *service) startWriteToStdin(stdin io.WriteCloser, input <-chan string) {
+func (sp *service) startWriteTo(writer io.WriteCloser, input <-chan string) {
 	go func() {
 		for line := range input {
-			_, err := stdin.Write([]byte(line + "\n"))
+			_, err := writer.Write([]byte(line + "\n"))
 			if err != nil {
-				sp.logger.Error(line, err)
+				sp.logger.Log(core.LogLevelError, fmt.Sprintf("can't write to std stream: %s", err))
 			}
 		}
 	}()
 }
 
-func (sp *service) startReadFromStdout(stdout io.ReadCloser) <-chan string {
+func (sp *service) startReadFrom(reader io.ReadCloser) <-chan string {
 	result := make(chan string)
 	go func() {
 		defer close(result)
 
-		reader := bufio.NewReader(stdout)
+		reader := bufio.NewReader(reader)
 		for {
 			line, err := reader.ReadString('\n')
 			if err == nil || (err == io.EOF && line != "") {
@@ -88,7 +94,7 @@ func (sp *service) startReadFromStdout(stdout io.ReadCloser) <-chan string {
 			}
 			if err != nil {
 				if err != io.EOF {
-					sp.logger.Error("can't read from stdout", err)
+					sp.logger.Log(core.LogLevelError, fmt.Sprintf("can't read from std stream: %s", err))
 				}
 
 				break

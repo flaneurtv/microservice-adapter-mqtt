@@ -9,6 +9,7 @@ import (
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAdapter(t *testing.T) {
@@ -19,7 +20,8 @@ func TestAdapter(t *testing.T) {
 	publisher2 := NewMockClient(bus)
 	subscriptions2 := []string{"tick"}
 	output1 := make(chan string)
-	service1 := NewMockServiceProducer(output1)
+	errors1 := make(chan string)
+	service1 := NewMockServiceProducer(output1, errors1)
 	counter := 0
 	service2 := NewMockService(func(msg string) string {
 		counter++
@@ -65,7 +67,7 @@ func TestAdapterConnectError(t *testing.T) {
 	publisher2 := NewMockClient(bus)
 	publisher2.forceConnectError = true
 	subscriptions2 := []string{"tick"}
-	service1 := NewMockServiceProducer(make(chan string))
+	service1 := NewMockServiceProducer(make(chan string), make(chan string))
 	service2 := NewMockService(func(msg string) string {
 		return msg
 	})
@@ -85,7 +87,7 @@ func TestAdapterSubscribeError(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
 	client1.forceSubscribeError = true
-	service1 := NewMockServiceProducer(make(chan string))
+	service1 := NewMockServiceProducer(make(chan string), make(chan string))
 
 	adapter1 := core.NewAdapter(client1, client1, nil, service1, logger.NewNoOpLogger())
 	_, err := adapter1.Start()
@@ -96,13 +98,81 @@ func TestAdapterSubscribeError(t *testing.T) {
 func TestAdapterStartError(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
-	service1 := NewMockServiceProducer(make(chan string))
+	service1 := NewMockServiceProducer(make(chan string), make(chan string))
 	service1.forceStartError = true
 
 	adapter1 := core.NewAdapter(client1, client1, nil, service1, logger.NewNoOpLogger())
 	_, err := adapter1.Start()
 	assert.NotNil(t, err)
 	assert.Equal(t, "can't start a service: start error", err.Error())
+}
+
+func TestAdapterLogging(t *testing.T) {
+	bus := NewMockBus()
+	client := NewMockClient(bus)
+	output := make(chan string)
+	errors := make(chan string)
+	service := NewMockServiceProducer(output, errors)
+
+	log := &mockLogger{}
+	adapter := core.NewAdapter(client, client, nil, service, log)
+	done, err := adapter.Start()
+	assert.Nil(t, err)
+
+	log.clear()
+	errors <- `{"log_level": "warning", "log_message": "test"}`
+	errors <- `plain`
+	errors <- `{"log_level": "warning", "log_message": "test"`
+	errors <- `{"log_level": "warning"}`
+	close(errors)
+
+	<-done
+
+	time.Sleep(time.Microsecond * 300)
+
+	assert.Equal(t, 4, len(log.messages))
+
+	assert.Equal(t, core.LogLevelWarning, log.messages[0].level)
+	assert.Equal(t, "test", log.messages[0].message)
+
+	assert.Equal(t, core.LogLevelDebug, log.messages[1].level)
+	assert.Equal(t, "plain", log.messages[1].message)
+
+	assert.Equal(t, core.LogLevelDebug, log.messages[2].level)
+	assert.Equal(t, `{"log_level": "warning", "log_message": "test"`, log.messages[2].message)
+
+	assert.Equal(t, core.LogLevelDebug, log.messages[3].level)
+	assert.Equal(t, `{"log_level": "warning"}`, log.messages[3].message)
+}
+
+func TestAdapterInvalidMessages(t *testing.T) {
+	bus := NewMockBus()
+	client := NewMockClient(bus)
+	output := make(chan string)
+	errors := make(chan string)
+	service := NewMockServiceProducer(output, errors)
+
+	log := &mockLogger{}
+	adapter := core.NewAdapter(client, client, nil, service, log)
+	done, err := adapter.Start()
+	assert.Nil(t, err)
+
+	log.clear()
+	output <- `{"a": 123`
+	output <- `{"a": "123"}`
+	close(output)
+
+	<-done
+
+	time.Sleep(time.Microsecond * 300)
+
+	assert.Equal(t, 2, len(log.messages))
+
+	assert.Equal(t, core.LogLevelError, log.messages[0].level)
+	assert.Equal(t, `invalid json: {"a": 123`, log.messages[0].message)
+
+	assert.Equal(t, core.LogLevelError, log.messages[1].level)
+	assert.Equal(t, `missing topic: {"a": "123"}`, log.messages[1].message)
 }
 
 type mockBus struct {
@@ -170,14 +240,15 @@ type mockService struct {
 	getOutputMessage func(msg string) string
 	inputMessages    []string
 	outputMessages   []string
+	errorMessages    []string
 }
 
 func NewMockService(getOutputMessage func(msg string) string) *mockService {
 	return &mockService{getOutputMessage: getOutputMessage}
 }
 
-func (sp *mockService) Start(input <-chan string) (output <-chan string, err error) {
-	out := make(chan string)
+func (sp *mockService) Start(input <-chan string) (output <-chan string, errs <-chan string, err error) {
+	out, errs := make(chan string), make(chan string)
 	go func() {
 		defer close(out)
 		for msg := range input {
@@ -192,22 +263,49 @@ func (sp *mockService) Start(input <-chan string) (output <-chan string, err err
 			sp.outputMessages = append(sp.outputMessages, outMsg)
 		}
 	}()
-	return out, nil
+	return out, errs, nil
 }
 
 type mockServiceProducer struct {
 	output          <-chan string
+	errors          <-chan string
 	forceStartError bool
 }
 
-func NewMockServiceProducer(output <-chan string) *mockServiceProducer {
-	return &mockServiceProducer{output: output}
+func NewMockServiceProducer(output <-chan string, errors <-chan string) *mockServiceProducer {
+	return &mockServiceProducer{output: output, errors: errors}
 }
 
-func (sp *mockServiceProducer) Start(input <-chan string) (output <-chan string, err error) {
+func (sp *mockServiceProducer) Start(input <-chan string) (output <-chan string, errors <-chan string, err error) {
 	if sp.forceStartError {
-		return nil, errors.New("start error")
+		return nil, nil, fmt.Errorf("start error")
 	}
 
-	return sp.output, nil
+	return sp.output, sp.errors, nil
+}
+
+type mockLogger struct {
+	messages []mockLoggerMessage
+}
+
+func (*mockLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {
+}
+
+func (*mockLogger) SetLevel(level core.LogLevel) {
+}
+
+func (*mockLogger) SetCreatedAtGetter(getCreatedAt func() time.Time) {
+}
+
+func (log *mockLogger) Log(level core.LogLevel, message string) {
+	log.messages = append(log.messages, mockLoggerMessage{level: level, message: message})
+}
+
+func (log *mockLogger) clear() {
+	log.messages = nil
+}
+
+type mockLoggerMessage struct {
+	level   core.LogLevel
+	message string
 }

@@ -1,6 +1,9 @@
 package logger
 
-import "gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+import (
+	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"time"
+)
 
 type noopLogger struct {
 }
@@ -9,20 +12,14 @@ func NewNoOpLogger() core.Logger {
 	return &noopLogger{}
 }
 
-func (*noopLogger) SetLevel(level string) {
+func (*noopLogger) SetLevel(level core.LogLevel) {
 }
 
-func (*noopLogger) Debug(message string) {
+func (*noopLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {
 }
 
-func (*noopLogger) Info(message string) {
+func (*noopLogger) SetCreatedAtGetter(getCreatedAt func() time.Time) {
 }
 
-func (*noopLogger) Warn(message string) {
-}
-
-func (*noopLogger) Error(message string, err error) {
-}
-
-func (*noopLogger) Panic(message string, err error) {
+func (*noopLogger) Log(level core.LogLevel, message string) {
 }

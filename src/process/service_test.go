@@ -15,7 +15,7 @@ func TestSimpleScript(t *testing.T) {
 	scriptFile, _ := ioutil.TempFile("", "script*.go")
 	defer os.Remove(scriptFile.Name())
 
-	scriptFile.WriteString(`package main
+	_, _ = scriptFile.WriteString(`package main
 
 import (
 	"bufio"
@@ -32,18 +32,20 @@ func main() {
 			break
 		}
 		fmt.Println(strings.TrimSpace(line) + "_OUT")
+		fmt.Fprintln(os.Stderr, strings.TrimSpace(line) + "_ERR")
 	}
 }
 `)
-	scriptFile.Close()
+	_ = scriptFile.Close()
 
 	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
-	output, err := sp.Start(input)
+	output, errors, err := sp.Start(input)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, output)
+	assert.NotNil(t, errors)
 
 	values := []string{"test1", "test2", "test3", "test4", "test5"}
 
@@ -57,13 +59,18 @@ func main() {
 		outValue := <-output
 		assert.Equal(t, value+"_OUT", outValue)
 	}
+
+	for _, value := range values {
+		errMsg := <-errors
+		assert.Equal(t, value+"_ERR", errMsg)
+	}
 }
 
 func TestHugeValues(t *testing.T) {
 	scriptFile, _ := ioutil.TempFile("", "script*.go")
 	defer os.Remove(scriptFile.Name())
 
-	scriptFile.WriteString(`package main
+	_, _ = scriptFile.WriteString(`package main
 
 import (
 	"bufio"
@@ -80,18 +87,20 @@ func main() {
 			break
 		}
 		fmt.Println(strings.TrimSpace(line) + "_OUT")
+		fmt.Fprintln(os.Stderr, strings.TrimSpace(line) + "_ERR")
 	}
 }
 `)
-	scriptFile.Close()
+	_ = scriptFile.Close()
 
 	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
-	output, err := sp.Start(input)
+	output, errors, err := sp.Start(input)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, output)
+	assert.NotNil(t, errors)
 
 	n := 10000000
 	values := []string{strings.Repeat("test1", n), strings.Repeat("test2", n), strings.Repeat("test3", n)}
@@ -104,7 +113,9 @@ func main() {
 
 	for _, value := range values {
 		outValue := <-output
+		errMsg := <-errors
 		assert.Equal(t, value+"_OUT", outValue)
+		assert.Equal(t, value+"_ERR", errMsg)
 	}
 }
 
@@ -112,7 +123,7 @@ func TestInvalidScript(t *testing.T) {
 	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", "qwerty123098 run", logger.NewNoOpLogger())
 
 	input := make(chan string)
-	_, err := sp.Start(input)
+	_, _, err := sp.Start(input)
 
 	assert.NotNil(t, err)
 }
@@ -121,7 +132,7 @@ func TestFailedScript(t *testing.T) {
 	scriptFile, _ := ioutil.TempFile("", "script*.go")
 	defer os.Remove(scriptFile.Name())
 
-	scriptFile.WriteString(`package main
+	_, _ = scriptFile.WriteString(`package main
 
 import (
 	"bufio"
@@ -145,15 +156,16 @@ func main() {
 	}
 }
 `)
-	scriptFile.Close()
+	_ = scriptFile.Close()
 
 	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
-	output, err := sp.Start(input)
+	output, errors, err := sp.Start(input)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, output)
+	assert.NotNil(t, errors)
 
 	values := []string{"test1", "test2", "fail", "test4", "test5"}
 
@@ -178,7 +190,7 @@ func TestSscriptEnvironment(t *testing.T) {
 	scriptFile, _ := ioutil.TempFile("", "script*.go")
 	defer os.Remove(scriptFile.Name())
 
-	scriptFile.WriteString(`package main
+	_, _ = scriptFile.WriteString(`package main
 
 import (
 	"bufio"
@@ -198,15 +210,16 @@ func main() {
 	}
 }
 `)
-	scriptFile.Close()
+	_ = scriptFile.Close()
 
 	sp := process.NewService("process1", "uuid1", "host1", "namespace1", "namespace2", fmt.Sprintf("go run %s", scriptFile.Name()), logger.NewNoOpLogger())
 
 	input := make(chan string)
-	output, err := sp.Start(input)
+	output, errors, err := sp.Start(input)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, output)
+	assert.NotNil(t, errors)
 
 	values := []string{"SERVICE_NAME", "SERVICE_UUID", "SERVICE_HOST", "NAMESPACE_LISTENER", "NAMESPACE_PUBLISHER"}
 

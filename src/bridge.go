@@ -39,14 +39,14 @@ func (b *Bridge) Start() (<-chan struct{}, error) {
 			return nil, fmt.Errorf("can't connect: %s", err)
 		}
 	} else {
-		b.logger.Debug("MQTT connection: listener and publisher are equal")
+		b.logger.Log(LogLevelDebug, "MQTT connection: listener and publisher are equal")
 	}
 
 	inputMessages, err := b.listener.Subscribe(b.subscriptions)
 	if err != nil {
 		return nil, fmt.Errorf("can't subscribe: %s", err)
 	} else {
-		b.logger.Info(fmt.Sprintf("Topics subscribed: %s", strings.Join(b.subscriptions, ", ")))
+		b.logger.Log(LogLevelInfo, fmt.Sprintf("Topics subscribed: %s", strings.Join(b.subscriptions, ", ")))
 	}
 
 	done := make(chan struct{})
@@ -54,18 +54,26 @@ func (b *Bridge) Start() (<-chan struct{}, error) {
 		defer close(done)
 
 		for inpMsg := range inputMessages {
-			inpTopic := gjson.Get(inpMsg, "topic").String()
-			topic, msg := inpTopic, inpMsg
-			if b.namespacePublisher != b.namespaceListener {
-				topic = strings.Replace(inpTopic, b.namespaceListener+"/", b.namespacePublisher+"/", 1)
-				msg, _ = sjson.Set(inpMsg, "topic", topic)
-			}
+			if gjson.Valid(inpMsg) {
+				inpTopic := gjson.Get(inpMsg, "topic").String()
+				if inpTopic != "" {
+					topic, msg := inpTopic, inpMsg
+					if b.namespacePublisher != b.namespaceListener {
+						topic = strings.Replace(inpTopic, b.namespaceListener+"/", b.namespacePublisher+"/", 1)
+						msg, _ = sjson.Set(msg, "topic", topic)
+					}
 
-			err := b.publisher.Publish(topic, msg)
-			if err != nil {
-				b.logger.Error(fmt.Sprintf("MQTT message for bridge dropped: %s", msg), err)
+					err := b.publisher.Publish(topic, msg)
+					if err != nil {
+						b.logger.Log(LogLevelError, fmt.Sprintf("MQTT message for bridge dropped: %s, error=%s", msg, err))
+					} else {
+						b.logger.Log(LogLevelDebug, fmt.Sprintf("MQTT message relayed through bridge: %s => %s", inpTopic, topic))
+					}
+				} else {
+					b.logger.Log(LogLevelError, fmt.Sprintf("missing topic: %s", inpMsg))
+				}
 			} else {
-				b.logger.Debug(fmt.Sprintf("MQTT message relayed through bridge: %s => %s", inpTopic, topic))
+				b.logger.Log(LogLevelError, fmt.Sprintf("invalid json: %s", inpMsg))
 			}
 		}
 	}()

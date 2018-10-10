@@ -17,15 +17,15 @@ func TestClients(t *testing.T) {
 	srv := startMockMQTTServer(mqttURL)
 	defer srv.Close()
 
-	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger())
+	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger(), nil)
 	err := client1.Connect()
 	assert.Nil(t, err)
 
-	client2 := mqtt.NewMQTTClient(mqttURL, "client2", core.Credentials{}, logger.NewNoOpLogger())
+	client2 := mqtt.NewMQTTClient(mqttURL, "client2", core.Credentials{}, logger.NewNoOpLogger(), nil)
 	err = client2.Connect()
 	assert.Nil(t, err)
 
-	client3 := mqtt.NewMQTTClient(mqttURL, "client3", core.Credentials{}, logger.NewNoOpLogger())
+	client3 := mqtt.NewMQTTClient(mqttURL, "client3", core.Credentials{}, logger.NewNoOpLogger(), nil)
 	err = client3.Connect()
 	assert.Nil(t, err)
 
@@ -66,17 +66,44 @@ func TestCredentials(t *testing.T) {
 	srv.Authenticator = "test_auth"
 	defer srv.Close()
 
-	client := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger())
+	client := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger(), nil)
 	err := client.Connect()
 	assert.NotNil(t, err)
 
-	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user123", Password: "password123"}, logger.NewNoOpLogger())
+	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user123", Password: "password123"}, logger.NewNoOpLogger(), nil)
 	err = client.Connect()
 	assert.Nil(t, err)
 
-	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user555", Password: "password555"}, logger.NewNoOpLogger())
+	client = mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{UserName: "user555", Password: "password555"}, logger.NewNoOpLogger(), nil)
 	err = client.Connect()
 	assert.NotNil(t, err)
+}
+
+func TestLostConnection(t *testing.T) {
+	mqttURL := "tcp://:15355"
+	srv := startMockMQTTServer(mqttURL)
+
+	var lost bool
+
+	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger(), func(err error) {
+		lost = true
+	})
+	err := client1.Connect()
+	assert.Nil(t, err)
+
+	go func() {
+		client1.Publish("test", "123")
+		client1.Publish("job", "456")
+
+		time.Sleep(time.Millisecond * 300)
+		srv.Close()
+
+		client1.Publish("work", "789")
+		client1.Publish("job", "012")
+	}()
+
+	time.Sleep(time.Millisecond * 500)
+	assert.True(t, lost)
 }
 
 func startMockMQTTServer(mqttURL string) *service.Server {
