@@ -1,0 +1,20 @@
+#!/bin/bash
+
+while true; do
+  while read line
+  do
+    case $line in
+      sleep*) sleep `echo $line | tr -s ' ' | cut -d ' ' -f 2` > /dev/null ;;
+      *) echo $line | CREATED_AT=`date -u +"%FT%T.000Z"` envsubst > /dev/fd/1 ;;
+    esac
+  done < messages.json
+
+  while read line
+  do
+    case $line in
+      sleep*) sleep `echo $line | tr -s ' ' | cut -d ' ' -f 2` > /dev/null ;;
+      *) echo $line | CREATED_AT=`date -u +"%FT%T.000Z"` envsubst > /dev/fd/2 ;;
+    esac
+  done < errors.json
+  sleep 3
+done

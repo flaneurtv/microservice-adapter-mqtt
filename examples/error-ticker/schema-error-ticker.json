@@ -1,0 +1,5 @@
+{
+  "log_level": "debug",
+  "log_message": "$TICK_UUID $TICK_TIMESTAMP",
+  "created_at": "$CREATED_AT"
+}

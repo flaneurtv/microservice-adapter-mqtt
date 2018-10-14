@@ -1,0 +1,22 @@
+sleep 1
+{"topic":"test/valid_full_message","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","service_host":"7b601c1044ae","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}}
+sleep 1
+{"topic":"test/missing_service_uuid","service_name":"tick-responder","service_host":"7b601c1044ae","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}}
+sleep 1
+{"topic":"test/missing_service_name","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_host":"7b601c1044ae","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}}
+sleep 1
+{"topic":"test/missing_service_host","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}}
+sleep 1
+{"topic":"test/missing_created_at","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","service_host":"7b601c1044ae","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}}
+sleep 1
+{"topic":"test/missing_payload","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","service_host":"7b601c1044ae","created_at":"$CREATED_AT"}
+sleep 1
+{"topic":"test/topic_only", "valid":"value A", "json":"value B", "non-json-pipe-protocol": "value C"}
+sleep 1
+{"topic":"test/invalid_json_1","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","service_host":"7b601c1044ae","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"}
+sleep 1
+{"topic":"test/invalid_json_2","service_uuid":"b09c6bb4-20f9-4ef5-9958-2c577cb73317","service_name":"tick-responder","service_host":"7b601c1044ae","created_at":"$CREATED_AT","payload":{"tick_uuid":"79b1fedb-90d6-467c-bc6f-09e00cb491e0","tick_timestamp":"2018-10-08T18:37:13.889Z"
+sleep 1
+"topic":"test/invalid_json_3","payload":"something"
+sleep 1
+{"valid":"value A", "json":"value B", "non-json-pipe-protocol": "value C"}

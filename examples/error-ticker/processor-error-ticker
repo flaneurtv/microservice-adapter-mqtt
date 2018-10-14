@@ -1,0 +1,23 @@
+#!/bin/bash
+#!/usr/bin/env bash
+
+# Just some prep stuff
+set -o nounset
+set -o errexit
+set -o pipefail
+# set -o xtrace
+
+# Set magic variables for current file & dir
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+__root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
+
+# And this is the actual processor code
+while true
+do
+  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.%3NZ"` TICK_TIMESTAMP=$CREATED_AT envsubst < $__dir/schema-error-ticker.json | jq -c -M . > /dev/fd/2
+  sleep 3
+  # simulate kill processor (ctrl + c)
+  # kill -SIGINT $$
+done

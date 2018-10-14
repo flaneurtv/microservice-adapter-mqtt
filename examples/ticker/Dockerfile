@@ -1,7 +1,7 @@
 FROM flaneurtv/microservice-adapter-mqtt as adapter
 # We will be copying /usr/local/bin/microservice-adapter-mqtt from this image.
 
-FROM golang:1.11-alpine3.8
+FROM alpine:3.8
 # This demo service sends a tick message every 3 seconds. Use it as a blueprint
 # for your own microservices using this adapter. It is recommended, to set ENV 
 # vars for everything specific to this service 
@@ -11,7 +11,6 @@ FROM golang:1.11-alpine3.8
 
 ENV SERVICE_NAME=ticker
 ENV SERVICE_PROCESSOR=/srv/ticker/processor
-# SUBSCRIPTIONS is not yet implemented
 ENV SUBSCRIPTIONS=/srv/ticker/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
@@ -21,4 +20,4 @@ COPY --from=adapter /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/micr
 WORKDIR /srv/ticker/
 COPY . .
 
-CMD ["microservice-adapter-mqtt","--subs=/srv/ticker/subscriptions.txt"]
+CMD ["microservice-adapter-mqtt"]

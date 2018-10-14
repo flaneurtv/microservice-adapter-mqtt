@@ -9,15 +9,12 @@ FROM alpine:3.8
 # specific settings (MQTT_LISTENER_URL, auth credentials, ...) in 
 # docker-compose.yml and thelike.
 
-ENV SERVICE_NAME=tick-responder
-ENV SERVICE_PROCESSOR=/srv/tick-responder/processor-tick-responder
-ENV SUBSCRIPTIONS=/srv/tick-responder/subscriptions.txt
+ENV SERVICE_NAME=bridge-tick
+ENV SUBSCRIPTIONS=/srv/bridge-tick/subscriptions.txt
 
-RUN apk add --no-cache bash jq gettext util-linux coreutils
+COPY --from=adapter /usr/local/bin/microservice-bridge-mqtt /usr/local/bin/microservice-bridge-mqtt
 
-COPY --from=adapter /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
-
-WORKDIR /srv/tick-responder/
+WORKDIR /srv/bridge-tick/
 COPY . .
 
-CMD ["microservice-adapter-mqtt"]
+CMD ["microservice-bridge-mqtt"]

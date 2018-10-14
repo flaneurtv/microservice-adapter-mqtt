@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# Just some prep stuff
+set -o nounset
+set -o errexit
+set -o pipefail
+# set -o xtrace
+
+# Set magic variables for current file & dir
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__file="${__dir}/$(basename "${BASH_SOURCE[0]}")"
+__base="$(basename ${__file} .sh)"
+__root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on your app
+
+while IFS= read -r line; do
+  # first we check if the line is valid JSON
+  echo $line | jq . > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    TICK_UUID=`echo $line | jq --raw-output .payload.tick_uuid` \
+    TICK_TIMESTAMP=`echo $line | jq --raw-output .payload.tick_timestamp` \
+    CREATED_AT=`date -u +"%FT%T.%3NZ"` \
+    envsubst < $__dir/schema-tick-error-response.json | jq -c -M . >2
+  else
+    # FIXME: needs to be adjusted yet
+    echo '{ "topic" : "'$NAMESPACE'/log", "message" : "http-request: error"}' </dev/null
+  fi
+done
