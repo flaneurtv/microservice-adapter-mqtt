@@ -16,7 +16,7 @@ __root="$(cd "$(dirname "${__dir}")" && pwd)" # <-- change this as it depends on
 # And this is the actual processor code
 while true
 do
-  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.%3NZ"` envsubst < $__dir/schema-error-ticker.json | jq -c -M . > /dev/fd/2
+  TICK_UUID=`uuidgen` CREATED_AT=`date -u +"%FT%T.%3NZ"` TICK_TIMESTAMP=$CREATED_AT envsubst < $__dir/schema-error-ticker.json | jq -c -M . > /dev/fd/2
   sleep 3
   # simulate kill processor (ctrl + c)
   # kill -SIGINT $$
