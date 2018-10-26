@@ -12,7 +12,7 @@ func NewNoOpLogger() core.Logger {
 	return &noopLogger{}
 }
 
-func (*noopLogger) SetLevel(level core.LogLevel) {
+func (*noopLogger) SetLevels(levelConsole, levelRemote core.LogLevel) {
 }
 
 func (*noopLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {

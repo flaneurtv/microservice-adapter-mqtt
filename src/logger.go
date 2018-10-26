@@ -24,7 +24,7 @@ var levels = []LogLevel{
 }
 
 type Logger interface {
-	SetLevel(level LogLevel)
+	SetLevels(levelConsole, leverRemote LogLevel)
 	SetClient(client MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string)
 	SetCreatedAtGetter(getCreatedAt func() time.Time)
 	Log(level LogLevel, message string)

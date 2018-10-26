@@ -16,7 +16,7 @@ func TestMQTTLogger(t *testing.T) {
 	log := logger.NewMQTTLogger(logOutput, logError)
 	client := &mockClient{}
 	log.SetClient(client, "root", "first", "id1", "host.com")
-	log.SetLevel(core.LogLevelNotice)
+	log.SetLevels(core.LogLevelNotice, core.LogLevelWarning)
 	log.SetCreatedAtGetter(func() time.Time {
 		return time.Date(2018, 10, 9, 10, 11, 12, 345345345, time.Now().Location())
 	})
@@ -27,19 +27,16 @@ func TestMQTTLogger(t *testing.T) {
 	log.Log(core.LogLevelCritical, "critical D")
 	log.Log(core.LogLevelWarning, "warning E")
 
-	assert.Equal(t, 4, len(client.messages))
+	assert.Equal(t, 3, len(client.messages))
 
 	assert.Equal(t, `root/log/first/id1/error`, client.messages[0].topic)
 	assert.Equal(t, `{"topic":"root/log/first/id1/error","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"error","log_message":"error A"}}}`, client.messages[0].message)
 
-	assert.Equal(t, `root/log/first/id1/notice`, client.messages[1].topic)
-	assert.Equal(t, `{"topic":"root/log/first/id1/notice","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"notice","log_message":"notice C"}}}`, client.messages[1].message)
+	assert.Equal(t, `root/log/first/id1/critical`, client.messages[1].topic)
+	assert.Equal(t, `{"topic":"root/log/first/id1/critical","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"critical","log_message":"critical D"}}}`, client.messages[1].message)
 
-	assert.Equal(t, `root/log/first/id1/critical`, client.messages[2].topic)
-	assert.Equal(t, `{"topic":"root/log/first/id1/critical","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"critical","log_message":"critical D"}}}`, client.messages[2].message)
-
-	assert.Equal(t, `root/log/first/id1/warning`, client.messages[3].topic)
-	assert.Equal(t, `{"topic":"root/log/first/id1/warning","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"warning","log_message":"warning E"}}}`, client.messages[3].message)
+	assert.Equal(t, `root/log/first/id1/warning`, client.messages[2].topic)
+	assert.Equal(t, `{"topic":"root/log/first/id1/warning","service_name":"first","service_uuid":"id1","service_host":"host.com","created_at":"2018-10-09T10:11:12.345Z","payload":{"log_entry":{"log_level":"warning","log_message":"warning E"}}}`, client.messages[2].message)
 
 	outputLines := strings.Split(logOutput.String(), "\n")
 	assert.Equal(t, 3, len(outputLines))

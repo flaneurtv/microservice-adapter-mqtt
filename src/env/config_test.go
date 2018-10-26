@@ -55,7 +55,8 @@ func TestCorrectConfig(t *testing.T) {
 	assert.Equal(t, core.Credentials{UserName: "user111", Password: "password111"}, cfg.ListenerCredentials())
 	assert.Equal(t, core.Credentials{UserName: "user222", Password: "password222"}, cfg.PublisherCredentials())
 	assert.Equal(t, []string{"master/test", "master/clean", "master/good"}, cfg.Subscriptions())
-	assert.Equal(t, "error", cfg.LogLevel())
+	assert.Equal(t, "error", cfg.LogLevelConsole())
+	assert.Equal(t, "error", cfg.LogLevelRemote())
 }
 
 func TestDefaultNamespace(t *testing.T) {
@@ -255,10 +256,11 @@ func TestLogLevel(t *testing.T) {
 
 	cfg, err := env.NewConfig()
 	assert.Nil(t, err)
-	assert.Equal(t, "warning", cfg.LogLevel())
+	assert.Equal(t, "warning", cfg.LogLevelConsole())
+	assert.Equal(t, "warning", cfg.LogLevelRemote())
 }
 
-func TestDebugLogLevel(t *testing.T) {
+func TestLogLevelConsole(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
@@ -266,14 +268,53 @@ func TestDebugLogLevel(t *testing.T) {
 	defer os.Remove(subscriptionsFile.Name())
 
 	setEnv(map[string]string{
-		"SUBSCRIPTIONS": subscriptionsFile.Name(),
-		"LOG_LEVEL":     "warning",
-		"DEBUG":         "true",
+		"SUBSCRIPTIONS":     subscriptionsFile.Name(),
+		"LOG_LEVEL":         "warning",
+		"LOG_LEVEL_CONSOLE": "info",
 	})
 
 	cfg, err := env.NewConfig()
 	assert.Nil(t, err)
-	assert.Equal(t, "debug", cfg.LogLevel())
+	assert.Equal(t, "info", cfg.LogLevelConsole())
+	assert.Equal(t, "warning", cfg.LogLevelRemote())
+}
+
+func TestLogLevelRemote(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
+
+	setEnv(map[string]string{
+		"SUBSCRIPTIONS":  subscriptionsFile.Name(),
+		"LOG_LEVEL":      "warning",
+		"LOG_LEVEL_MQTT": "info",
+	})
+
+	cfg, err := env.NewConfig()
+	assert.Nil(t, err)
+	assert.Equal(t, "info", cfg.LogLevelRemote())
+	assert.Equal(t, "warning", cfg.LogLevelConsole())
+}
+
+func TestLogLevelConsoleRemote(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	subscriptionsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(subscriptionsFile.Name())
+
+	setEnv(map[string]string{
+		"SUBSCRIPTIONS":     subscriptionsFile.Name(),
+		"LOG_LEVEL_CONSOLE": "debug",
+		"LOG_LEVEL_MQTT":    "info",
+	})
+
+	cfg, err := env.NewConfig()
+	assert.Nil(t, err)
+	assert.Equal(t, "debug", cfg.LogLevelConsole())
+	assert.Equal(t, "info", cfg.LogLevelRemote())
 }
 
 func setEnv(env map[string]string) {
@@ -295,4 +336,6 @@ func clearEnv() {
 	os.Unsetenv("SUBSCRIPTIONS")
 	os.Unsetenv("DEBUG")
 	os.Unsetenv("LOG_LEVEL")
+	os.Unsetenv("LOG_LEVEL_CONSOLE")
+	os.Unsetenv("LOG_LEVEL_MQTT")
 }
