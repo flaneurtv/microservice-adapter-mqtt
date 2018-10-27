@@ -13,8 +13,8 @@ require (
 	github.com/tidwall/gjson v1.1.3
 	github.com/tidwall/match v0.0.0-20171002075945-1731857f09b1 // indirect
 	github.com/tidwall/sjson v1.0.2
-	golang.org/x/net v0.0.0-20180921000356-2f5d2388922f // indirect
+	golang.org/x/net v0.0.0-20181023162649-9b4f9f5ad519 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
 
-replace github.com/surgemq/surgemq => github.com/falconandy/surgemq v0.0.0-20180923154843-8a3243020845
+replace github.com/surgemq/surgemq => github.com/falconandy/surgemq v0.0.0-20181027105745-b9c89582d2327222335cb0b9906ed1626a723398
