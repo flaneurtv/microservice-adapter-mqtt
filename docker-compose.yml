@@ -59,7 +59,7 @@ services:
     build: ./examples/error-ticker
     image: flaneurtv/microservice-error-ticker
     environment:
-      - "DEBUG=true"
+      - "LOG_LEVEL=debug"
       - "NAMESPACE_LISTENER=flaneur"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"

@@ -135,13 +135,13 @@ func TestAdapterLogging(t *testing.T) {
 	assert.Equal(t, core.LogLevelWarning, log.messages[0].level)
 	assert.Equal(t, "test", log.messages[0].message)
 
-	assert.Equal(t, core.LogLevelDebug, log.messages[1].level)
+	assert.Equal(t, core.LogLevelError, log.messages[1].level)
 	assert.Equal(t, "plain", log.messages[1].message)
 
-	assert.Equal(t, core.LogLevelDebug, log.messages[2].level)
+	assert.Equal(t, core.LogLevelError, log.messages[2].level)
 	assert.Equal(t, `{"log_level": "warning", "log_message": "test"`, log.messages[2].message)
 
-	assert.Equal(t, core.LogLevelDebug, log.messages[3].level)
+	assert.Equal(t, core.LogLevelError, log.messages[3].level)
 	assert.Equal(t, `{"log_level": "warning"}`, log.messages[3].message)
 }
 
@@ -291,7 +291,7 @@ type mockLogger struct {
 func (*mockLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {
 }
 
-func (*mockLogger) SetLevel(level core.LogLevel) {
+func (*mockLogger) SetLevels(levelConsole, levelRemote core.LogLevel) {
 }
 
 func (*mockLogger) SetCreatedAtGetter(getCreatedAt func() time.Time) {

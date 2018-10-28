@@ -16,7 +16,7 @@ services:
     build: ./examples/test-sender
     image: flaneurtv/microservice-test-sender
     environment:
-      - "DEBUG=true"
+      - "LOG_LEVEL=debug"
       - "NAMESPACE_LISTENER=default"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
       - "NAMESPACE_PUBLISHER=default"
