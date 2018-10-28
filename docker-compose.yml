@@ -1,8 +1,8 @@
 # This docker-compose.yml is for demonstration purposes. If you run 
-# docker-compose build && docker-compose up, you will have a local mosquitto 
-# mqtt server running and a ticker microservice, which is using the 
-# microservice-adapter-mqtt connected to it, publishing a tick message every 
-# 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these 
+# docker-compose build && docker-compose up, you will have a local mosquitto
+# mqtt server running and a ticker microservice, which is using the
+# microservice-adapter-mqtt connected to it, publishing a tick message every
+# 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these
 # messages.
 version: '3'
 services:
@@ -10,13 +10,13 @@ services:
     build: .
     image: flaneurtv/microservice-adapter-mqtt
   ticker:
-    depends_on: 
+    depends_on:
       - microservice-adapter-mqtt
       - mqtt
     build: ./examples/ticker
     image: flaneurtv/microservice-ticker
     environment:
-      - "DEBUG=false"
+      - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=default"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
@@ -32,13 +32,13 @@ services:
     networks:
       - service-network
   tick-responder:
-    depends_on: 
+    depends_on:
       - microservice-adapter-mqtt
       - mqtt
     build: ./examples/tick-responder
     image: flaneurtv/microservice-tick-responder
     environment:
-      - "DEBUG=false"
+      - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=flaneur"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
@@ -53,7 +53,7 @@ services:
     networks:
       - service-network
   error-ticker:
-    depends_on: 
+    depends_on:
       - microservice-adapter-mqtt
       - mqtt
     build: ./examples/error-ticker
@@ -92,14 +92,14 @@ services:
     volumes:
       - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
   bridge-tick:
-    depends_on: 
+    depends_on:
       - microservice-adapter-mqtt
       - mqtt
       - mqtt2
     build: ./examples/bridge-tick
     image: flaneurtv/microservice-bridge-tick
     environment:
-      - "DEBUG=false"
+      - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=flaneur"
       - "NAMESPACE_PUBLISHER=bridged"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
@@ -114,14 +114,14 @@ services:
     networks:
       - service-network
   bridge-tick-responder:
-    depends_on: 
+    depends_on:
       - microservice-adapter-mqtt
       - mqtt
       - mqtt2
     build: ./examples/bridge-tick-responder
     image: flaneurtv/microservice-bridge-tick-responder
     environment:
-      - "DEBUG=false"
+      - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=test"
       - "NAMESPACE_PUBLISHER=bridged"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
