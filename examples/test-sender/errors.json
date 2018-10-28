@@ -1,12 +1,18 @@
 sleep 1
-{"log_level": "debug", "log_message": "string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+{"log_level": "debug", "log_message": "debug string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
-{"log_level": "info", "log_message": "string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+{"log_level": "info", "log_message": "info string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
-{"log_level": "warning", "log_message": "string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+{"log_level": "notice", "log_message": "notice string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
-{"log_level": "error", "log_message": "string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+{"log_level": "warning", "log_message": "warning string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
-{"log_level": "critical", "log_message": "string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+{"log_level": "error", "log_message": "error string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+sleep 1
+{"log_level": "critical", "log_message": "critical string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+sleep 1
+{"log_level": "alert", "log_message": "alert string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
+sleep 1
+{"log_level": "emergency", "log_message": "emergency string: \\"double quotes\\" to escape", "created_at": "$CREATED_AT"}
 sleep 1
 Messages not being JSON should be treated as if they are "debug" messages.
