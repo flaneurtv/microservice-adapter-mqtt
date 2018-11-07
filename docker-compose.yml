@@ -1,4 +1,4 @@
-# This docker-compose.yml is for demonstration purposes. If you run 
+# This docker-compose.yml is for demonstration purposes. If you run
 # docker-compose build && docker-compose up, you will have a local mosquitto
 # mqtt server running and a ticker microservice, which is using the
 # microservice-adapter-mqtt connected to it, publishing a tick message every
@@ -6,9 +6,59 @@
 # messages.
 version: '3'
 services:
+  mqtt:
+    image: eclipse-mosquitto
+    ports:
+     - "1883:1883"
+     - "9001:9001"
+    networks:
+      - service-network
+    volumes:
+      - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+    restart: always
+  mqtt2:
+    image: eclipse-mosquitto
+    ports:
+     - "1884:1883"
+     - "9002:9001"
+    networks:
+      - service-network
+    volumes:
+      - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+    restart: always
   microservice-adapter-mqtt:
+    depends_on:
+      - mqtt
     build: .
     image: flaneurtv/microservice-adapter-mqtt
+    environment:
+      - "LOG_LEVEL=debug"
+      - "NAMESPACE_LISTENER=default"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+      - "NAMESPACE_PUBLISHER=default"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+    networks:
+      - service-network
+    restart: always
+    volumes:
+      - ./examples/test-echo/:/srv/test-echo/
+  test-sender:
+    depends_on:
+      - microservice-adapter-mqtt
+      - mqtt
+    build: ./examples/test-sender
+    image: flaneurtv/microservice-test-sender
+    environment:
+      - "LOG_LEVEL=debug"
+      - "NAMESPACE_LISTENER=default"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+      - "NAMESPACE_PUBLISHER=default"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+    networks:
+      - service-network
+    volumes:
+      - ./examples/test-sender/:/srv/test-sender/
+    restart: always
   ticker:
     depends_on:
       - microservice-adapter-mqtt
@@ -21,16 +71,17 @@ services:
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
 #      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
-      - "NAMESPACE_PUBLISHER=flaneur"
+      - "NAMESPACE_PUBLISHER=other"
       - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
 #      - "MQTT_PUBLISHER_URL=tcp://m20.cloudmqtt.com:13701"
 #      - "MQTT_PUBLISHER_URL=tcp://iot.eclipse.org:1883"
-    volumes:
-       - ./examples/ticker/schema-tick-hugestring.json:/srv/ticker/schema-tick.json
+#    volumes:
+#       - ./examples/ticker/schema-tick-hugestring.json:/srv/ticker/schema-tick.json
 #      - ./local/mqtt_listener.json:/run/secrets/mqtt_listener.json
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
       - service-network
+    restart: always
   tick-responder:
     depends_on:
       - microservice-adapter-mqtt
@@ -39,7 +90,7 @@ services:
     image: flaneurtv/microservice-tick-responder
     environment:
       - "LOG_LEVEL=error"
-      - "NAMESPACE_LISTENER=flaneur"
+      - "NAMESPACE_LISTENER=other"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
 #      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
@@ -52,6 +103,7 @@ services:
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
       - service-network
+    restart: always
   error-ticker:
     depends_on:
       - microservice-adapter-mqtt
@@ -60,7 +112,7 @@ services:
     image: flaneurtv/microservice-error-ticker
     environment:
       - "LOG_LEVEL=debug"
-      - "NAMESPACE_LISTENER=flaneur"
+      - "NAMESPACE_LISTENER=other"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
 #      - "MQTT_LISTENER_URL=tcp://m20.cloudmqtt.com:13701"
@@ -73,24 +125,7 @@ services:
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
       - service-network
-  mqtt:
-    image: eclipse-mosquitto
-    ports:
-     - "1883:1883"
-     - "9001:9001"
-    networks:
-      - service-network
-    volumes:
-      - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
-  mqtt2:
-    image: eclipse-mosquitto
-    ports:
-     - "1884:1883"
-     - "9002:9001"
-    networks:
-      - service-network
-    volumes:
-      - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+    restart: always
   bridge-tick:
     depends_on:
       - microservice-adapter-mqtt
@@ -100,7 +135,7 @@ services:
     image: flaneurtv/microservice-bridge-tick
     environment:
       - "LOG_LEVEL=error"
-      - "NAMESPACE_LISTENER=flaneur"
+      - "NAMESPACE_LISTENER=other"
       - "NAMESPACE_PUBLISHER=bridged"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
 #      - "MQTT_LISTENER_URL=tcp://iot.eclipse.org:1883"
@@ -113,6 +148,7 @@ services:
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
       - service-network
+    restart: always
   bridge-tick-responder:
     depends_on:
       - microservice-adapter-mqtt
@@ -135,5 +171,6 @@ services:
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
       - service-network
+    restart: always
 networks:
   service-network:
