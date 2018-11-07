@@ -1,5 +1,5 @@
 {
-    "topic": "$NAMESPACE/log/test-echo",
+    "topic": "$NAMESPACE_PUBLISHER/log/test-echo",
     "service_uuid": "$SERVICE_UUID",
     "service_name": "$SERVICE_NAME",
     "service_host": "$SERVICE_HOST",

@@ -21,6 +21,6 @@ while IFS= read -r line; do
     CREATED_AT=`date -u +"%FT%T.%3NZ"` \
     envsubst < $__dir/schema-test-echo.json | jq -c -M .
   else
-    echo '{"topic": "'$NAMESPACE'/log", "message": "http-request: error"}' </dev/null
+    echo '{"topic": "'$NAMESPACE_PUBLISHER'/log/'$SERVICE_NAME'/'$SERVICE_UUID'/error", "message": "error: shit went sideways"}' </dev/null
   fi
 done
