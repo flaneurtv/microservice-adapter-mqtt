@@ -12,12 +12,13 @@ type mqttLogger struct {
 	output io.Writer
 	error  io.Writer
 
-	level       core.LogLevel
-	client      core.MessageBusClient
-	namespace   string
-	serviceName string
-	serviceUUID string
-	serviceHost string
+	levelConsole core.LogLevel
+	levelRemote  core.LogLevel
+	client       core.MessageBusClient
+	namespace    string
+	serviceName  string
+	serviceUUID  string
+	serviceHost  string
 
 	getCreatedAt func() time.Time
 }
@@ -26,8 +27,9 @@ func NewMQTTLogger(output, error io.Writer) core.Logger {
 	return &mqttLogger{output: output, error: error}
 }
 
-func (logger *mqttLogger) SetLevel(level core.LogLevel) {
-	logger.level = level
+func (logger *mqttLogger) SetLevels(levelConsole, levelRemote core.LogLevel) {
+	logger.levelConsole = levelConsole
+	logger.levelRemote = levelRemote
 }
 
 func (logger *mqttLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {
@@ -43,19 +45,18 @@ func (logger *mqttLogger) SetCreatedAtGetter(getCreatedAt func() time.Time) {
 }
 
 func (logger *mqttLogger) Log(level core.LogLevel, message string) {
-	if level.IsWeaker(logger.level) {
-		return
-	}
-
 	var out io.Writer
 	if level.IsWeaker(core.LogLevelError) {
 		out = logger.output
 	} else {
 		out = logger.error
 	}
-	_, _ = fmt.Fprintf(out, fmt.Sprintf("%s: %s\n", level, message))
 
-	if logger.client != nil {
+	if !level.IsWeaker(logger.levelConsole) {
+		_, _ = fmt.Fprintf(out, fmt.Sprintf("%s: %s\n", level, message))
+	}
+
+	if !level.IsWeaker(logger.levelRemote) && logger.client != nil {
 		topic, jsonMessage := logger.generateDebugMessage(level, message)
 		err := logger.client.Publish(topic, jsonMessage)
 		if err != nil {

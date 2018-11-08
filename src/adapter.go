@@ -83,7 +83,7 @@ func (a *Adapter) Start() (<-chan struct{}, error) {
 					break LOOP
 				}
 
-				logLevel := LogLevelDebug
+				logLevel := LogLevelError
 				message := msg
 				if gjson.Valid(msg) {
 					message = gjson.Get(msg, "log_message").String()

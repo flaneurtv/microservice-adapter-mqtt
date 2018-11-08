@@ -16,7 +16,8 @@ type Configuration interface {
 
 	Subscriptions() []string
 
-	LogLevel() string
+	LogLevelConsole() string
+	LogLevelRemote() string
 }
 
 type Credentials struct {

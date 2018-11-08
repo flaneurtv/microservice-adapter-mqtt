@@ -1,30 +1,11 @@
-# This docker-compose.yml is for demonstration purposes. If you run 
-# docker-compose build && docker-compose up, you will have a local mosquitto 
-# mqtt server running and a ticker microservice, which is using the 
-# microservice-adapter-mqtt connected to it, publishing a tick message every 
-# 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these 
+# This docker-compose.yml is for demonstration purposes. If you run
+# docker-compose build && docker-compose up, you will have a local mosquitto
+# mqtt server running and a ticker microservice, which is using the
+# microservice-adapter-mqtt connected to it, publishing a tick message every
+# 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these
 # messages.
 version: '3'
 services:
-  microservice-adapter-mqtt:
-    build: .
-    image: flaneurtv/microservice-adapter-mqtt
-  test-sender:
-    depends_on: 
-      - microservice-adapter-mqtt
-      - mqtt
-    build: ./examples/test-sender
-    image: flaneurtv/microservice-test-sender
-    environment:
-      - "DEBUG=true"
-      - "NAMESPACE_LISTENER=default"
-      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
-      - "NAMESPACE_PUBLISHER=default"
-      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
-    networks:
-      - service-network
-    volumes:
-      - ./examples/test-sender/:/srv/test-sender/
   mqtt:
     image: eclipse-mosquitto
     ports:
@@ -34,5 +15,39 @@ services:
       - service-network
     volumes:
       - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+    restart: always
+  microservice-adapter-mqtt:
+    depends_on:
+      - mqtt
+    build: .
+    image: flaneurtv/microservice-adapter-mqtt
+    environment:
+      - "LOG_LEVEL=debug"
+      - "NAMESPACE_LISTENER=default"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+      - "NAMESPACE_PUBLISHER=default"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+    networks:
+      - service-network
+    restart: always
+    volumes:
+      - ./examples/test-echo/:/srv/test-echo/
+  test-sender:
+    depends_on:
+      - microservice-adapter-mqtt
+      - mqtt
+    build: ./examples/test-sender
+    image: flaneurtv/microservice-test-sender
+    environment:
+      - "LOG_LEVEL=debug"
+      - "NAMESPACE_LISTENER=default"
+      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+      - "NAMESPACE_PUBLISHER=default"
+      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+    networks:
+      - service-network
+    volumes:
+      - ./examples/test-sender/:/srv/test-sender/
+    restart: always
 networks:
   service-network:

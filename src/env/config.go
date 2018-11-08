@@ -33,7 +33,8 @@ type config struct {
 
 	subscriptions []string
 
-	logLevel string
+	logLevelConsole string
+	logLevelRemote  string
 }
 
 func NewConfig() (core.Configuration, error) {
@@ -80,9 +81,15 @@ func NewConfig() (core.Configuration, error) {
 	if logLevel == "" {
 		logLevel = "error"
 	}
-	debug := strings.ToLower(os.Getenv("DEBUG")) == "true"
-	if debug {
-		logLevel = "debug"
+
+	logLevelConsole := strings.ToLower(os.Getenv("LOG_LEVEL_CONSOLE"))
+	if logLevelConsole == "" {
+		logLevelConsole = logLevel
+	}
+
+	logLevelRemote := strings.ToLower(os.Getenv("LOG_LEVEL_MQTT"))
+	if logLevelRemote == "" {
+		logLevelRemote = logLevel
 	}
 
 	return &config{
@@ -97,7 +104,8 @@ func NewConfig() (core.Configuration, error) {
 		publisherURL:         publisherURL,
 		publisherCredentials: publisherCredentials,
 		subscriptions:        subscriptions,
-		logLevel:             logLevel,
+		logLevelConsole:      logLevelConsole,
+		logLevelRemote:       logLevelRemote,
 	}, nil
 }
 
@@ -145,8 +153,12 @@ func (cfg *config) Subscriptions() []string {
 	return cfg.subscriptions
 }
 
-func (cfg *config) LogLevel() string {
-	return cfg.logLevel
+func (cfg *config) LogLevelConsole() string {
+	return cfg.logLevelConsole
+}
+
+func (cfg *config) LogLevelRemote() string {
+	return cfg.logLevelRemote
 }
 
 func readSubscriptions(subscriptionsPath, namespace string) ([]string, error) {
