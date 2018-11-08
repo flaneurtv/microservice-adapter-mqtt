@@ -32,8 +32,8 @@ ENV SUBSCRIPTIONS=/srv/test-echo/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
 
-COPY --from=builder $TARGET_ADAPTER_PATH $TARGET_ADAPTER_PATH
-COPY --from=builder $TARGET_BRIDGE_PATH $TARGET_BRIDGE_PATH
+COPY --from=builder /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
+COPY --from=builder /usr/local/bin/microservice-bridge-mqtt /usr/local/bin/microservice-bridge-mqtt
 
 WORKDIR /srv/test-echo/
 COPY examples/test-echo /srv/.
