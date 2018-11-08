@@ -30,13 +30,12 @@ ENV SERVICE_NAME=test-echo
 ENV SERVICE_PROCESSOR=/srv/test-echo/processor
 ENV SUBSCRIPTIONS=/srv/test-echo/subscriptions.txt
 
-RUN apk add --no-cache bash jq gettext util-linux coreutils py2-pip && \
-  pip install pytz
+RUN apk add --no-cache bash jq gettext util-linux coreutils
 
 COPY --from=builder $TARGET_ADAPTER_PATH $TARGET_ADAPTER_PATH
 COPY --from=builder $TARGET_BRIDGE_PATH $TARGET_BRIDGE_PATH
 
 WORKDIR /srv/test-echo/
-COPY . .
+COPY examples/test-echo /srv/.
 
 CMD ["microservice-adapter-mqtt"]

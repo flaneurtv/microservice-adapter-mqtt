@@ -23,6 +23,7 @@ services:
     image: flaneurtv/microservice-adapter-mqtt
     environment:
       - "LOG_LEVEL=debug"
+      - "LOG_LEVEL_MQTT=debug"
       - "NAMESPACE_LISTENER=default"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
       - "NAMESPACE_PUBLISHER=default"
@@ -40,6 +41,7 @@ services:
     image: flaneurtv/microservice-test-sender
     environment:
       - "LOG_LEVEL=debug"
+      - "LOG_LEVEL_MQTT=debug"
       - "NAMESPACE_LISTENER=default"
       - "MQTT_LISTENER_URL=tcp://mqtt:1883"
       - "NAMESPACE_PUBLISHER=default"
