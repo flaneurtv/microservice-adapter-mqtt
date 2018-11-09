@@ -22,7 +22,7 @@ func main() {
 		}
 	}()
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewBridgeConfig(log)
 	if err != nil {
 		log.Log(core.LogLevelCritical, fmt.Sprintf("can't create config: %s", err))
 		os.Exit(1)

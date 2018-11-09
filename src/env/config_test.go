@@ -1,6 +1,7 @@
 package env_test
 
 import (
+	"fmt"
 	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
@@ -8,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestCorrectConfig(t *testing.T) {
@@ -23,6 +25,9 @@ func TestCorrectConfig(t *testing.T) {
 	subscriptionsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(subscriptionsFile.Name())
 
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
+
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
@@ -32,7 +37,7 @@ func TestCorrectConfig(t *testing.T) {
 
 	setEnv(map[string]string{
 		"SERVICE_NAME":               "MyService",
-		"SERVICE_PROCESSOR":          "./my/service run",
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name() + " run",
 		"NAMESPACE":                  "root",
 		"NAMESPACE_LISTENER":         "master",
 		"MQTT_LISTENER_URL":          "tcp://mqtt.com:111",
@@ -42,12 +47,12 @@ func TestCorrectConfig(t *testing.T) {
 		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "MyService", cfg.ServiceName())
 	assert.NotEmpty(t, cfg.ServiceUUID())
 	assert.NotEmpty(t, cfg.ServiceHost())
-	assert.Equal(t, "./my/service run", cfg.ServiceCmdLine())
+	assert.Equal(t, serviceProcessorFile.Name()+" run", cfg.ServiceCmdLine())
 	assert.Equal(t, "master", cfg.NamespaceListener())
 	assert.Equal(t, "root", cfg.NamespacePublisher())
 	assert.Equal(t, "tcp://mqtt.com:111", cfg.ListenerURL())
@@ -72,6 +77,9 @@ func TestDefaultNamespace(t *testing.T) {
 	subscriptionsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(subscriptionsFile.Name())
 
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
+
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
@@ -83,9 +91,10 @@ func TestDefaultNamespace(t *testing.T) {
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
 		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "default", cfg.NamespaceListener())
 	assert.Equal(t, "default", cfg.NamespacePublisher())
@@ -99,20 +108,18 @@ func TestEmptyListenerCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscriptionsFile.WriteString("test\nclean\ngood\n")
-	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 }
 
@@ -123,20 +130,18 @@ func TestEmptyPublisherCredentials(t *testing.T) {
 	listenerCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(listenerCredentialsFile.Name())
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
-	subscriptionsFile.WriteString("test\nclean\ngood\n")
-	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS": listenerCredentialsFile.Name(),
-		"SUBSCRIPTIONS":             subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":         serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 }
 
@@ -147,20 +152,18 @@ func TestMissingPublisherCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
 	publisherCredentialsFile.Close()
-	subscriptionsFile.WriteString("test\nclean\ngood\n")
-	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name() + uuid.NewV4().String(),
-		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.NotNil(t, err)
 }
 
@@ -171,20 +174,18 @@ func TestMissingListenerCredentials(t *testing.T) {
 	listenerCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(listenerCredentialsFile.Name())
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
-	subscriptionsFile.WriteString("test\nclean\ngood\n")
-	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS": listenerCredentialsFile.Name() + uuid.NewV4().String(),
-		"SUBSCRIPTIONS":             subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":         serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.NotNil(t, err)
 }
 
@@ -198,6 +199,9 @@ func TestMissingSubscriptions(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
+
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
@@ -206,10 +210,41 @@ func TestMissingSubscriptions(t *testing.T) {
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
+		"SUBSCRIPTIONS":              fmt.Sprintf("/dummy/subscriptions_%d", time.Now().UnixNano()),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.NotNil(t, err)
+}
+
+func TestEmptySubscriptions(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	listenerCredentialsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(listenerCredentialsFile.Name())
+
+	publisherCredentialsFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(publisherCredentialsFile.Name())
+
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
+
+	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
+	listenerCredentialsFile.Close()
+	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"}`)
+	publisherCredentialsFile.Close()
+
+	setEnv(map[string]string{
+		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
+		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
+	})
+
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(cfg.Subscriptions()))
 }
 
 func TestCorruptedCredentials(t *testing.T) {
@@ -222,23 +257,21 @@ func TestCorruptedCredentials(t *testing.T) {
 	publisherCredentialsFile, _ := ioutil.TempFile("", "")
 	defer os.Remove(publisherCredentialsFile.Name())
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	listenerCredentialsFile.WriteString(`{"username": "user111", "password": "password111"}`)
 	listenerCredentialsFile.Close()
 	publisherCredentialsFile.WriteString(`{"username": "user222", "password": "password222"`)
 	publisherCredentialsFile.Close()
-	subscriptionsFile.WriteString("test\nclean\ngood\n")
-	subscriptionsFile.Close()
 
 	setEnv(map[string]string{
 		"MQTT_LISTENER_CREDENTIALS":  listenerCredentialsFile.Name(),
 		"MQTT_PUBLISHER_CREDENTIALS": publisherCredentialsFile.Name(),
-		"SUBSCRIPTIONS":              subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR":          serviceProcessorFile.Name(),
 	})
 
-	_, err := env.NewConfig()
+	_, err := env.NewAdapterConfig(&mockLogger{})
 	assert.NotNil(t, err)
 }
 
@@ -246,15 +279,15 @@ func TestLogLevel(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	setEnv(map[string]string{
-		"SUBSCRIPTIONS": subscriptionsFile.Name(),
-		"LOG_LEVEL":     "warning",
+		"SERVICE_PROCESSOR": serviceProcessorFile.Name(),
+		"LOG_LEVEL":         "warning",
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "warning", cfg.LogLevelConsole())
 	assert.Equal(t, "warning", cfg.LogLevelRemote())
@@ -264,16 +297,16 @@ func TestLogLevelConsole(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	setEnv(map[string]string{
-		"SUBSCRIPTIONS":     subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR": serviceProcessorFile.Name(),
 		"LOG_LEVEL":         "warning",
 		"LOG_LEVEL_CONSOLE": "info",
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "info", cfg.LogLevelConsole())
 	assert.Equal(t, "warning", cfg.LogLevelRemote())
@@ -283,16 +316,16 @@ func TestLogLevelRemote(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	setEnv(map[string]string{
-		"SUBSCRIPTIONS":  subscriptionsFile.Name(),
-		"LOG_LEVEL":      "warning",
-		"LOG_LEVEL_MQTT": "info",
+		"SERVICE_PROCESSOR": serviceProcessorFile.Name(),
+		"LOG_LEVEL":         "warning",
+		"LOG_LEVEL_MQTT":    "info",
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "info", cfg.LogLevelRemote())
 	assert.Equal(t, "warning", cfg.LogLevelConsole())
@@ -302,19 +335,81 @@ func TestLogLevelConsoleRemote(t *testing.T) {
 	clearEnv()
 	defer clearEnv()
 
-	subscriptionsFile, _ := ioutil.TempFile("", "")
-	defer os.Remove(subscriptionsFile.Name())
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
 
 	setEnv(map[string]string{
-		"SUBSCRIPTIONS":     subscriptionsFile.Name(),
+		"SERVICE_PROCESSOR": serviceProcessorFile.Name(),
 		"LOG_LEVEL_CONSOLE": "debug",
 		"LOG_LEVEL_MQTT":    "info",
 	})
 
-	cfg, err := env.NewConfig()
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
 	assert.Nil(t, err)
 	assert.Equal(t, "debug", cfg.LogLevelConsole())
 	assert.Equal(t, "info", cfg.LogLevelRemote())
+}
+
+func TestServiceProcessorEmpty(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	setEnv(map[string]string{
+		"SERVICE_PROCESSOR": "",
+	})
+
+	_, err := env.NewAdapterConfig(&mockLogger{})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "SERVICE_PROCESSOR can't be empty")
+}
+
+func TestServiceProcessorMissing(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	setEnv(map[string]string{
+		"SERVICE_PROCESSOR": fmt.Sprintf("/dummy/processor_%d", time.Now().UnixNano()),
+	})
+
+	_, err := env.NewAdapterConfig(&mockLogger{})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "no such file or directory")
+}
+
+func TestServiceProcessorDirectory(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	serviceProcessorFile, _ := ioutil.TempDir("", "")
+	defer os.RemoveAll(serviceProcessorFile)
+
+	setEnv(map[string]string{
+		"SERVICE_PROCESSOR": serviceProcessorFile,
+	})
+
+	_, err := env.NewAdapterConfig(&mockLogger{})
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "should reference to a file")
+}
+
+func TestDefaultValues(t *testing.T) {
+	clearEnv()
+	defer clearEnv()
+
+	serviceProcessorFile, _ := ioutil.TempFile("", "")
+	defer os.Remove(serviceProcessorFile.Name())
+
+	setEnv(map[string]string{
+		"SERVICE_PROCESSOR": serviceProcessorFile.Name(),
+	})
+
+	cfg, err := env.NewAdapterConfig(&mockLogger{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(cfg.Subscriptions()))
+	assert.Equal(t, core.Credentials{}, cfg.ListenerCredentials())
+	assert.Equal(t, core.Credentials{}, cfg.PublisherCredentials())
+	assert.Equal(t, "tcp://mqtt:1883", cfg.ListenerURL())
+	assert.Equal(t, "tcp://mqtt:1883", cfg.PublisherURL())
 }
 
 func setEnv(env map[string]string) {
@@ -338,4 +433,30 @@ func clearEnv() {
 	os.Unsetenv("LOG_LEVEL")
 	os.Unsetenv("LOG_LEVEL_CONSOLE")
 	os.Unsetenv("LOG_LEVEL_MQTT")
+}
+
+type mockLogger struct {
+	messages []mockLoggerMessage
+}
+
+func (*mockLogger) SetClient(client core.MessageBusClient, namespace, serviceName, serviceUUID, serviceHost string) {
+}
+
+func (*mockLogger) SetLevels(levelConsole, levelRemote core.LogLevel) {
+}
+
+func (*mockLogger) SetCreatedAtGetter(getCreatedAt func() time.Time) {
+}
+
+func (log *mockLogger) Log(level core.LogLevel, message string) {
+	log.messages = append(log.messages, mockLoggerMessage{level: level, message: message})
+}
+
+func (log *mockLogger) clear() {
+	log.messages = nil
+}
+
+type mockLoggerMessage struct {
+	level   core.LogLevel
+	message string
 }

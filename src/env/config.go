@@ -2,6 +2,7 @@ package env
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/satori/go.uuid"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
@@ -13,8 +14,12 @@ import (
 const (
 	defaultNamespace                = "default"
 	nullNamespace                   = "null"
-	defaultListenerCredentialsPath  = "path/to/secrets/mqtt_listener.json"
-	defaultPublisherCredentialsPath = "path/to/secrets/mqtt_publisher.json"
+	defaultListenerCredentialsPath  = "/run/secrets/mqtt_listener.json"
+	defaultPublisherCredentialsPath = "/run/secrets/mqtt_publisher.json"
+	defaultListenerURL              = "tcp://mqtt:1883"
+	defaultPublisherURL             = "tcp://mqtt:1883"
+	defaultServiceCmdLine           = "/srv/processor"
+	defaultSubscriptionsFile        = "/srv/subscriptions.txt"
 )
 
 type config struct {
@@ -37,11 +42,27 @@ type config struct {
 	logLevelRemote  string
 }
 
-func NewConfig() (core.Configuration, error) {
+func NewAdapterConfig(logger core.Logger) (core.Configuration, error) {
+	return newConfig(logger, true)
+}
+
+func NewBridgeConfig(logger core.Logger) (core.Configuration, error) {
+	return newConfig(logger, false)
+}
+
+func newConfig(logger core.Logger, withServiceProcessor bool) (core.Configuration, error) {
 	serviceName := os.Getenv("SERVICE_NAME")
 	serviceUUID := uuid.NewV4().String()
 	serviceHost, _ := os.Hostname()
-	serviceCmdLine := os.Getenv("SERVICE_PROCESSOR")
+
+	var serviceCmdLine string
+	if withServiceProcessor {
+		var err error
+		serviceCmdLine, err = getServiceCmdLine(logger)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	namespace := os.Getenv("NAMESPACE")
 	if namespace == "" {
@@ -59,20 +80,26 @@ func NewConfig() (core.Configuration, error) {
 	}
 
 	listenerURL := os.Getenv("MQTT_LISTENER_URL")
+	if listenerURL == "" {
+		listenerURL = defaultListenerURL
+	}
+
 	publisherURL := os.Getenv("MQTT_PUBLISHER_URL")
+	if publisherURL == "" {
+		publisherURL = defaultPublisherURL
+	}
 
-	listenerCredentials, err := readCredentials(os.Getenv("MQTT_LISTENER_CREDENTIALS"), defaultListenerCredentialsPath)
+	listenerCredentials, err := readCredentials("MQTT_LISTENER_CREDENTIALS", defaultListenerCredentialsPath, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	publisherCredentials, err := readCredentials(os.Getenv("MQTT_PUBLISHER_CREDENTIALS"), defaultPublisherCredentialsPath)
+	publisherCredentials, err := readCredentials("MQTT_PUBLISHER_CREDENTIALS", defaultPublisherCredentialsPath, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	subscriptionsPath := os.Getenv("SUBSCRIPTIONS")
-	subscriptions, err := readSubscriptions(subscriptionsPath, namespaceListener)
+	subscriptions, err := readSubscriptions(namespaceListener, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -161,9 +188,22 @@ func (cfg *config) LogLevelRemote() string {
 	return cfg.logLevelRemote
 }
 
-func readSubscriptions(subscriptionsPath, namespace string) ([]string, error) {
+func readSubscriptions(namespace string, logger core.Logger) ([]string, error) {
+	subscriptionsPath, ok := os.LookupEnv("SUBSCRIPTIONS")
+	if !ok {
+		if logger != nil {
+			logger.Log(core.LogLevelWarning, fmt.Sprintf("SUBSCRIPTIONS not set, trying %s", defaultSubscriptionsFile))
+		}
+		subscriptionsPath = defaultSubscriptionsFile
+	} else if strings.TrimSpace(subscriptionsPath) == "" {
+		return nil, errors.New("SUBSCRIPTIONS can't be empty")
+	}
+
 	content, err := ioutil.ReadFile(subscriptionsPath)
 	if err != nil {
+		if os.IsNotExist(err) && !ok {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("can't read subscriptions: %s", err)
 	}
 
@@ -183,17 +223,25 @@ func readSubscriptions(subscriptionsPath, namespace string) ([]string, error) {
 	return subscriptions, nil
 }
 
-func readCredentials(credentialsPath, defaultCredentialsPath string) (core.Credentials, error) {
+func readCredentials(credentialsEnvVar, defaultCredentialsPath string, logger core.Logger) (core.Credentials, error) {
 	var credentials core.Credentials
 
-	path := credentialsPath
-	if path == "" {
-		path = defaultCredentialsPath
+	credentialsPath, ok := os.LookupEnv(credentialsEnvVar)
+	if !ok {
+		if logger != nil {
+			logger.Log(core.LogLevelWarning, fmt.Sprintf("%s not set, trying %s", credentialsEnvVar, defaultCredentialsPath))
+		}
+		credentialsPath = defaultCredentialsPath
+	} else if strings.TrimSpace(credentialsPath) == "" {
+		return credentials, fmt.Errorf("%s can't be empty", credentialsEnvVar)
 	}
 
-	content, err := ioutil.ReadFile(path)
+	content, err := ioutil.ReadFile(credentialsPath)
 	if err != nil {
-		if os.IsNotExist(err) && credentialsPath == "" {
+		if os.IsNotExist(err) && !ok {
+			if logger != nil {
+				logger.Log(core.LogLevelWarning, fmt.Sprintf("Default credentials file '%s' doesn't exist - try to connect with empty credentials", credentialsPath))
+			}
 			return credentials, nil
 		}
 		return credentials, fmt.Errorf("can't read credentials: %s", err)
@@ -205,4 +253,26 @@ func readCredentials(credentialsPath, defaultCredentialsPath string) (core.Crede
 	}
 
 	return credentials, nil
+}
+
+func getServiceCmdLine(logger core.Logger) (string, error) {
+	serviceCmdLine, ok := os.LookupEnv("SERVICE_PROCESSOR")
+	if !ok {
+		if logger != nil {
+			logger.Log(core.LogLevelWarning, fmt.Sprintf("SERVICE_PROCESSOR not set, trying %s", defaultServiceCmdLine))
+		}
+		serviceCmdLine = defaultServiceCmdLine
+	} else if strings.TrimSpace(serviceCmdLine) == "" {
+		return "", errors.New("SERVICE_PROCESSOR can't be empty")
+	}
+
+	parts := strings.Fields(serviceCmdLine)
+	info, err := os.Stat(parts[0])
+	if err != nil {
+		return "", err
+	}
+	if info.IsDir() {
+		return "", errors.New("SERVICE_PROCESSOR should reference to a file")
+	}
+	return serviceCmdLine, nil
 }

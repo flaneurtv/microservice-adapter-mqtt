@@ -31,6 +31,10 @@ type Logger interface {
 }
 
 func (level LogLevel) IsWeaker(other LogLevel) bool {
+	if other == "" {
+		return false
+	}
+
 	for _, lvl := range levels {
 		if lvl == other {
 			return false
