@@ -9,13 +9,14 @@ import (
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
 	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/mqtt"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestClients(t *testing.T) {
 	mqttURL := "tcp://:15355"
-	srv := startMockMQTTServer(t, mqttURL)
+	srv := startMockMQTTServer(t, mqttURL, "")
 	defer closeMockMQTTServer(t, srv)
 
 	client1 := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger(), nil)
@@ -63,8 +64,7 @@ func TestCredentials(t *testing.T) {
 	defer auth.Unregister("test_auth")
 
 	mqttURL := "tcp://:15355"
-	srv := startMockMQTTServer(t, mqttURL)
-	srv.Authenticator = "test_auth"
+	srv := startMockMQTTServer(t, mqttURL, "test_auth")
 	defer closeMockMQTTServer(t, srv)
 
 	client := mqtt.NewMQTTClient(mqttURL, "client1", core.Credentials{}, logger.NewNoOpLogger(), nil)
@@ -82,7 +82,7 @@ func TestCredentials(t *testing.T) {
 
 func TestLostConnection(t *testing.T) {
 	mqttURL := "tcp://:15355"
-	srv := startMockMQTTServer(t, mqttURL)
+	srv := startMockMQTTServer(t, mqttURL, "")
 
 	var lost bool
 
@@ -92,7 +92,11 @@ func TestLostConnection(t *testing.T) {
 	err := client1.Connect()
 	assert.Nil(t, err)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		client1.Publish("test", "123")
 		client1.Publish("job", "456")
 
@@ -102,13 +106,14 @@ func TestLostConnection(t *testing.T) {
 		client1.Publish("job", "012")
 	}()
 
+	wg.Wait()
 	time.Sleep(time.Millisecond * 1000)
 	assert.True(t, lost)
 }
 
 func TestReconnect(t *testing.T) {
 	mqttURL := "tcp://:15355"
-	srv := startMockMQTTServer(t, mqttURL)
+	srv := startMockMQTTServer(t, mqttURL, "")
 	defer func() {
 		defer closeMockMQTTServer(t, srv)
 	}()
@@ -137,7 +142,7 @@ func TestReconnect(t *testing.T) {
 
 		time.Sleep(time.Millisecond * 500)
 		closeMockMQTTServer(t, srv)
-		srv = startMockMQTTServer(t, mqttURL)
+		srv = startMockMQTTServer(t, mqttURL, "")
 		time.Sleep(time.Millisecond * 1000)
 
 		err = client1.Publish("work", "789")
@@ -167,9 +172,10 @@ func TestReconnect(t *testing.T) {
 	assert.Equal(t, "777", msg34)
 }
 
-func startMockMQTTServer(t *testing.T, mqttURL string) *service.Server {
+func startMockMQTTServer(t *testing.T, mqttURL, authenticator string) *service.Server {
 	time.Sleep(500 * time.Millisecond)
 	srv := &service.Server{}
+	srv.Authenticator = authenticator
 	go func() {
 		err := srv.ListenAndServe(mqttURL)
 		assert.Nil(t, err)
