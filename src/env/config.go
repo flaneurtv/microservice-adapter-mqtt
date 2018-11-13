@@ -81,20 +81,22 @@ func newConfig(logger core.Logger, withServiceProcessor bool) (core.Configuratio
 
 	listenerURL := os.Getenv("MQTT_LISTENER_URL")
 	if listenerURL == "" {
+		logger.Log(core.LogLevelInfo, fmt.Sprintf("MQTT_LISTENER_URL not set, trying default url '%s'", defaultListenerURL))
 		listenerURL = defaultListenerURL
 	}
 
 	publisherURL := os.Getenv("MQTT_PUBLISHER_URL")
 	if publisherURL == "" {
+		logger.Log(core.LogLevelInfo, fmt.Sprintf("MQTT_PUBLISHER_URL not set, trying default url '%s'", defaultPublisherURL))
 		publisherURL = defaultPublisherURL
 	}
 
-	listenerCredentials, err := readCredentials("MQTT_LISTENER_CREDENTIALS", defaultListenerCredentialsPath, logger)
+	listenerCredentials, err := readCredentials("Listener", "MQTT_LISTENER_CREDENTIALS", defaultListenerCredentialsPath, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	publisherCredentials, err := readCredentials("MQTT_PUBLISHER_CREDENTIALS", defaultPublisherCredentialsPath, logger)
+	publisherCredentials, err := readCredentials("Publisher", "MQTT_PUBLISHER_CREDENTIALS", defaultPublisherCredentialsPath, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -191,21 +193,23 @@ func (cfg *config) LogLevelRemote() string {
 func readSubscriptions(namespace string, logger core.Logger) ([]string, error) {
 	subscriptionsPath, ok := os.LookupEnv("SUBSCRIPTIONS")
 	if !ok {
-		if logger != nil {
-			logger.Log(core.LogLevelWarning, fmt.Sprintf("SUBSCRIPTIONS not set, trying %s", defaultSubscriptionsFile))
-		}
+		logger.Log(core.LogLevelWarning, fmt.Sprintf("SUBSCRIPTIONS not set, trying default location '%s'", defaultSubscriptionsFile))
 		subscriptionsPath = defaultSubscriptionsFile
 	} else if strings.TrimSpace(subscriptionsPath) == "" {
-		return nil, errors.New("SUBSCRIPTIONS can't be empty")
+		logger.Log(core.LogLevelInfo, "SUBSCRIPTIONS set to nil, starting without subscriptions")
+		return nil, nil
 	}
 
 	content, err := ioutil.ReadFile(subscriptionsPath)
 	if err != nil {
-		if os.IsNotExist(err) && !ok {
+		if os.IsNotExist(err) {
+			logger.Log(core.LogLevelWarning, fmt.Sprintf("Subscriptions file not found at '%s', starting without subscriptions: %s", subscriptionsPath, err))
 			return nil, nil
 		}
 		return nil, fmt.Errorf("can't read subscriptions: %s", err)
 	}
+
+	logger.Log(core.LogLevelInfo, fmt.Sprintf("Subscriptions file found at '%s'", subscriptionsPath))
 
 	lines := strings.Split(string(content), "\n")
 	subscriptions := make([]string, 0, len(lines))
@@ -220,17 +224,19 @@ func readSubscriptions(namespace string, logger core.Logger) ([]string, error) {
 		}
 	}
 
+	if len(subscriptions) == 0 {
+		logger.Log(core.LogLevelWarning, "Subscriptions file empty, starting without subscriptions")
+	}
+
 	return subscriptions, nil
 }
 
-func readCredentials(credentialsEnvVar, defaultCredentialsPath string, logger core.Logger) (core.Credentials, error) {
+func readCredentials(credentialsTitle, credentialsEnvVar, defaultCredentialsPath string, logger core.Logger) (core.Credentials, error) {
 	var credentials core.Credentials
 
 	credentialsPath, ok := os.LookupEnv(credentialsEnvVar)
 	if !ok {
-		if logger != nil {
-			logger.Log(core.LogLevelWarning, fmt.Sprintf("%s not set, trying %s", credentialsEnvVar, defaultCredentialsPath))
-		}
+		logger.Log(core.LogLevelWarning, fmt.Sprintf("%s not set, trying default location %s", credentialsEnvVar, defaultCredentialsPath))
 		credentialsPath = defaultCredentialsPath
 	} else if strings.TrimSpace(credentialsPath) == "" {
 		return credentials, fmt.Errorf("%s can't be empty", credentialsEnvVar)
@@ -238,14 +244,14 @@ func readCredentials(credentialsEnvVar, defaultCredentialsPath string, logger co
 
 	content, err := ioutil.ReadFile(credentialsPath)
 	if err != nil {
-		if os.IsNotExist(err) && !ok {
-			if logger != nil {
-				logger.Log(core.LogLevelWarning, fmt.Sprintf("Default credentials file '%s' doesn't exist - try to connect with empty credentials", credentialsPath))
-			}
+		if os.IsNotExist(err) {
+			logger.Log(core.LogLevelWarning, fmt.Sprintf("%s credentials file '%s' doesn't exist - trying to connect with empty credentials", credentialsTitle, credentialsPath))
 			return credentials, nil
 		}
 		return credentials, fmt.Errorf("can't read credentials: %s", err)
 	}
+
+	logger.Log(core.LogLevelInfo, fmt.Sprintf("%s credentials found at '%s'", credentialsTitle, credentialsPath))
 
 	err = json.Unmarshal(content, &credentials)
 	if err != nil {
@@ -258,9 +264,7 @@ func readCredentials(credentialsEnvVar, defaultCredentialsPath string, logger co
 func getServiceCmdLine(logger core.Logger) (string, error) {
 	serviceCmdLine, ok := os.LookupEnv("SERVICE_PROCESSOR")
 	if !ok {
-		if logger != nil {
-			logger.Log(core.LogLevelWarning, fmt.Sprintf("SERVICE_PROCESSOR not set, trying %s", defaultServiceCmdLine))
-		}
+		logger.Log(core.LogLevelWarning, fmt.Sprintf("SERVICE_PROCESSOR not set, trying %s", defaultServiceCmdLine))
 		serviceCmdLine = defaultServiceCmdLine
 	} else if strings.TrimSpace(serviceCmdLine) == "" {
 		return "", errors.New("SERVICE_PROCESSOR can't be empty")
