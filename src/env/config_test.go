@@ -164,7 +164,7 @@ func TestMissingPublisherCredentials(t *testing.T) {
 	})
 
 	_, err := env.NewAdapterConfig(&mockLogger{})
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func TestMissingListenerCredentials(t *testing.T) {
@@ -186,7 +186,7 @@ func TestMissingListenerCredentials(t *testing.T) {
 	})
 
 	_, err := env.NewAdapterConfig(&mockLogger{})
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func TestMissingSubscriptions(t *testing.T) {
@@ -215,7 +215,7 @@ func TestMissingSubscriptions(t *testing.T) {
 	})
 
 	_, err := env.NewAdapterConfig(&mockLogger{})
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
 
 func TestEmptySubscriptions(t *testing.T) {
