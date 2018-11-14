@@ -27,15 +27,15 @@ FROM alpine:3.8
 # docker-compose.yml and thelike.
 
 ENV SERVICE_NAME=test-echo
-ENV SERVICE_PROCESSOR=/srv/test-echo/processor
-ENV SUBSCRIPTIONS=/srv/test-echo/subscriptions.txt
+ENV SERVICE_PROCESSOR=/srv/processor
+ENV SUBSCRIPTIONS=/srv/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
 
 COPY --from=builder /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
 COPY --from=builder /usr/local/bin/microservice-bridge-mqtt /usr/local/bin/microservice-bridge-mqtt
 
-WORKDIR /srv/test-echo/
-COPY examples/test-echo /srv/.
+WORKDIR /srv/
+COPY examples/test-echo/. /srv/.
 
 CMD ["microservice-adapter-mqtt"]
