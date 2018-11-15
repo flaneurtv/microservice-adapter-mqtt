@@ -3,21 +3,21 @@ FROM flaneurtv/microservice-adapter-mqtt as adapter
 
 FROM alpine:3.8
 # This demo service sends a tick message every 3 seconds. Use it as a blueprint
-# for your own microservices using this adapter. It is recommended, to set ENV 
-# vars for everything specific to this service 
-# (SEVICE_NAME, SERVICE_PROCESSOR, SUBSCRIPTIONS) right here and infrastructure 
-# specific settings (MQTT_LISTENER_URL, auth credentials, ...) in 
+# for your own microservices using this adapter. It is recommended, to set ENV
+# vars for everything specific to this service
+# (SEVICE_NAME, SERVICE_PROCESSOR, SUBSCRIPTIONS) right here and infrastructure
+# specific settings (MQTT_LISTENER_URL, auth credentials, ...) in
 # docker-compose.yml and thelike.
 
 ENV SERVICE_NAME=tick-responder
-ENV SERVICE_PROCESSOR=/srv/tick-responder/processor-tick-responder
-ENV SUBSCRIPTIONS=/srv/tick-responder/subscriptions.txt
+ENV SERVICE_PROCESSOR=/srv/processor-tick-responder
+ENV SUBSCRIPTIONS=/srv/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
 
 COPY --from=adapter /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
 
-WORKDIR /srv/tick-responder/
+WORKDIR /srv/
 COPY . .
 
 CMD ["microservice-adapter-mqtt"]

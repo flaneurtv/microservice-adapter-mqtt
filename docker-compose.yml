@@ -41,7 +41,7 @@ services:
       - service-network
     restart: always
     volumes:
-      - ./examples/test-echo/:/srv/test-echo/
+      - ./examples/test-echo/:/srv/
   test-sender:
     depends_on:
       - microservice-adapter-mqtt
@@ -57,7 +57,7 @@ services:
     networks:
       - service-network
     volumes:
-      - ./examples/test-sender/:/srv/test-sender/
+      - ./examples/test-sender/:/srv/
     restart: always
   ticker:
     depends_on:
@@ -76,7 +76,7 @@ services:
 #      - "MQTT_PUBLISHER_URL=tcp://m20.cloudmqtt.com:13701"
 #      - "MQTT_PUBLISHER_URL=tcp://iot.eclipse.org:1883"
 #    volumes:
-#       - ./examples/ticker/schema-tick-hugestring.json:/srv/ticker/schema-tick.json
+#       - ./examples/ticker/schema-tick-hugestring.json:/srv/schema-tick.json
 #      - ./local/mqtt_listener.json:/run/secrets/mqtt_listener.json
 #      - ./local/mqtt_publisher.json:/run/secrets/mqtt_publisher.json
     networks:
