@@ -83,7 +83,7 @@ func TestAdapterConnectError(t *testing.T) {
 	assert.Equal(t, "can't connect: connect error", err.Error())
 }
 
-func TestAdapterSubscribeError(t *testing.T) {
+func TestAdapterEmptySubscriptions(t *testing.T) {
 	bus := NewMockBus()
 	client1 := NewMockClient(bus)
 	client1.forceSubscribeError = true
@@ -91,8 +91,7 @@ func TestAdapterSubscribeError(t *testing.T) {
 
 	adapter1 := core.NewAdapter(client1, client1, nil, service1, logger.NewNoOpLogger())
 	_, err := adapter1.Start()
-	assert.NotNil(t, err)
-	assert.Equal(t, "can't subscribe: subscribe error", err.Error())
+	assert.Nil(t, err)
 }
 
 func TestAdapterStartError(t *testing.T) {

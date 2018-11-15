@@ -39,11 +39,14 @@ func (a *Adapter) Start() (<-chan struct{}, error) {
 		a.logger.Log(LogLevelDebug, "MQTT connection: listener and publisher are equal")
 	}
 
-	inputMessages, err := a.listener.Subscribe(a.subscriptions)
-	if err != nil {
-		return nil, fmt.Errorf("can't subscribe: %s", err)
-	} else {
-		a.logger.Log(LogLevelInfo, fmt.Sprintf("Topics subscribed: %s", strings.Join(a.subscriptions, ", ")))
+	var inputMessages <-chan string
+	if len(a.subscriptions) > 0 {
+		inputMessages, err = a.listener.Subscribe(a.subscriptions)
+		if err != nil {
+			return nil, fmt.Errorf("can't subscribe: %s", err)
+		} else {
+			a.logger.Log(LogLevelInfo, fmt.Sprintf("Topics subscribed: %s", strings.Join(a.subscriptions, ", ")))
+		}
 	}
 
 	outputMessages, errorMessages, err := a.service.Start(inputMessages)

@@ -63,7 +63,9 @@ func (sp *service) Start(input <-chan string) (output <-chan string, errors <-ch
 		return nil, nil, fmt.Errorf("can't start command: %s", err)
 	}
 
-	sp.startWriteTo(stdin, input)
+	if input != nil {
+		sp.startWriteTo(stdin, input)
+	}
 	output = sp.startReadFrom(stdout)
 	errors = sp.startReadFrom(stderr)
 	return output, errors, nil
