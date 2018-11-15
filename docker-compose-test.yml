@@ -25,14 +25,14 @@ services:
       - "LOG_LEVEL=debug"
       - "LOG_LEVEL_MQTT=debug"
       - "NAMESPACE_LISTENER=default"
-      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+#      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
       - "NAMESPACE_PUBLISHER=default"
-      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+#      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
     networks:
       - service-network
     restart: always
     volumes:
-      - ./examples/test-echo/:/srv/test-echo/
+      - ./examples/test-echo/:/srv/
   test-sender:
     depends_on:
       - microservice-adapter-mqtt
@@ -40,16 +40,20 @@ services:
     build: ./examples/test-sender
     image: flaneurtv/microservice-test-sender
     environment:
+#      - "SUBSCRIPTIONS="
       - "LOG_LEVEL=debug"
       - "LOG_LEVEL_MQTT=debug"
       - "NAMESPACE_LISTENER=default"
-      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
+#      - "MQTT_LISTENER_URL=tcp://mqtt:1883"
       - "NAMESPACE_PUBLISHER=default"
-      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
+#      - "MQTT_PUBLISHER_URL=tcp://mqtt:1883"
     networks:
       - service-network
     volumes:
-      - ./examples/test-sender/:/srv/test-sender/
+#      - ./examples/test-sender/:/srv/
+#      - ./examples/test-sender/subscriptions-1-line-empty.txt:/srv/subscriptions.txt
+      - ./examples/test-sender/subscriptions-2-lines-empty.txt:/srv/subscriptions.txt
+#      - ./examples/test-sender/subscriptions-bogus.txt:/srv/subscriptions.txt
     restart: always
 networks:
   service-network:
