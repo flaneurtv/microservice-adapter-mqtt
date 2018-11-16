@@ -101,9 +101,6 @@ func TestLostConnection(t *testing.T) {
 		client1.Publish("job", "456")
 
 		closeMockMQTTServer(t, srv)
-
-		client1.Publish("work", "789")
-		client1.Publish("job", "012")
 	}()
 
 	wg.Wait()
