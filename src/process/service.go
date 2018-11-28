@@ -3,7 +3,7 @@ package process
 import (
 	"bufio"
 	"fmt"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"gitlab.com/flaneurtv/samm/core"
 	"io"
 	"os"
 	"os/exec"

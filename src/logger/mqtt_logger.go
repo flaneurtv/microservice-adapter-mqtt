@@ -3,7 +3,7 @@ package logger
 import (
 	"fmt"
 	"github.com/tidwall/sjson"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"gitlab.com/flaneurtv/samm/core"
 	"io"
 	"time"
 )

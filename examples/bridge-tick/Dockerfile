@@ -1,5 +1,5 @@
-FROM flaneurtv/microservice-adapter-mqtt as adapter
-# We will be copying /usr/local/bin/microservice-adapter-mqtt from this image.
+FROM flaneurtv/samm as adapter
+# We will be copying /usr/local/bin/samm from this image.
 
 FROM alpine:3.8
 # This demo service sends a tick message every 3 seconds. Use it as a blueprint
@@ -12,9 +12,9 @@ FROM alpine:3.8
 ENV SERVICE_NAME=bridge-tick
 ENV SUBSCRIPTIONS=/srv/subscriptions.txt
 
-COPY --from=adapter /usr/local/bin/microservice-bridge-mqtt /usr/local/bin/microservice-bridge-mqtt
+COPY --from=adapter /usr/local/bin/sammbridge /usr/local/bin/sammbridge
 
 WORKDIR /srv/
 COPY . .
 
-CMD ["microservice-bridge-mqtt"]
+CMD ["sammbridge"]

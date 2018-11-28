@@ -1,5 +1,5 @@
-FROM flaneurtv/microservice-adapter-mqtt as adapter
-# We will be copying /usr/local/bin/microservice-adapter-mqtt from this image.
+FROM flaneurtv/samm as adapter
+# We will be copying /usr/local/bin/samm from this image.
 
 FROM alpine:3.8
 # This demo service sends a tick message every 3 seconds. Use it as a blueprint
@@ -15,9 +15,9 @@ ENV SUBSCRIPTIONS=/srv/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
 
-COPY --from=adapter /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
+COPY --from=adapter /usr/local/bin/samm /usr/local/bin/samm
 
 WORKDIR /srv/
 COPY . .
 
-CMD ["microservice-adapter-mqtt"]
+CMD ["samm"]

@@ -3,7 +3,7 @@ package mqtt
 import (
 	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"gitlab.com/flaneurtv/samm/core"
 )
 
 type mqttClient struct {

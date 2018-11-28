@@ -1,7 +1,7 @@
 # This docker-compose.yml is for demonstration purposes. If you run
 # docker-compose build && docker-compose up, you will have a local mosquitto
 # mqtt server running and a ticker microservice, which is using the
-# microservice-adapter-mqtt connected to it, publishing a tick message every
+# samm connected to it, publishing a tick message every
 # 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these
 # messages.
 version: '3'
@@ -26,11 +26,11 @@ services:
     volumes:
       - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
     restart: always
-  microservice-adapter-mqtt:
+  samm:
     depends_on:
       - mqtt
     build: .
-    image: flaneurtv/microservice-adapter-mqtt
+    image: flaneurtv/samm
     environment:
       - "LOG_LEVEL=debug"
       - "NAMESPACE_LISTENER=default"
@@ -44,10 +44,10 @@ services:
       - ./examples/test-echo/:/srv/
   test-sender:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
     build: ./examples/test-sender
-    image: flaneurtv/microservice-test-sender
+    image: flaneurtv/samm-test-sender
     environment:
       - "LOG_LEVEL=debug"
       - "NAMESPACE_LISTENER=default"
@@ -61,10 +61,10 @@ services:
     restart: always
   ticker:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
     build: ./examples/ticker
-    image: flaneurtv/microservice-ticker
+    image: flaneurtv/samm-ticker
     environment:
       - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=default"
@@ -84,10 +84,10 @@ services:
     restart: always
   tick-responder:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
     build: ./examples/tick-responder
-    image: flaneurtv/microservice-tick-responder
+    image: flaneurtv/samm-tick-responder
     environment:
       - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=other"
@@ -106,10 +106,10 @@ services:
     restart: always
   error-ticker:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
     build: ./examples/error-ticker
-    image: flaneurtv/microservice-error-ticker
+    image: flaneurtv/samm-error-ticker
     environment:
       - "LOG_LEVEL=debug"
       - "NAMESPACE_LISTENER=other"
@@ -128,11 +128,11 @@ services:
     restart: always
   bridge-tick:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
       - mqtt2
     build: ./examples/bridge-tick
-    image: flaneurtv/microservice-bridge-tick
+    image: flaneurtv/bridge-tick
     environment:
       - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=other"
@@ -151,11 +151,11 @@ services:
     restart: always
   bridge-tick-responder:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
       - mqtt2
     build: ./examples/bridge-tick-responder
-    image: flaneurtv/microservice-bridge-tick-responder
+    image: flaneurtv/bridge-tick-responder
     environment:
       - "LOG_LEVEL=error"
       - "NAMESPACE_LISTENER=test"

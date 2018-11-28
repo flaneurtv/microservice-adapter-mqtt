@@ -3,8 +3,8 @@ package logger_test
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
+	"gitlab.com/flaneurtv/samm/core"
+	"gitlab.com/flaneurtv/samm/core/logger"
 	"strings"
 	"testing"
 	"time"

@@ -2,8 +2,8 @@ package core_test
 
 import (
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
+	"gitlab.com/flaneurtv/samm/core"
+	"gitlab.com/flaneurtv/samm/core/logger"
 	"sync"
 	"testing"
 	"time"

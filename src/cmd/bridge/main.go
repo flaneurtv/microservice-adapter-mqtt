@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/env"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/mqtt"
+	"gitlab.com/flaneurtv/samm/core"
+	"gitlab.com/flaneurtv/samm/core/env"
+	"gitlab.com/flaneurtv/samm/core/logger"
+	"gitlab.com/flaneurtv/samm/core/mqtt"
 	"os"
 )
 

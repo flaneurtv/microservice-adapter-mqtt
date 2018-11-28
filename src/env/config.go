@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/satori/go.uuid"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core"
+	"gitlab.com/flaneurtv/samm/core"
 	"io/ioutil"
 	"os"
 	"strings"

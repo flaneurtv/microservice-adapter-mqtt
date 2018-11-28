@@ -1,11 +1,11 @@
 FROM golang:1.11 as builder
-# Use this as a base to copy /usr/local/bin/microservice-adapter-mqtt from to
+# Use this as a base to copy /usr/local/bin/samm from to
 # be used in your multistage microservice builds.
 
-ENV TARGET_ADAPTER_NAME microservice-adapter-mqtt
+ENV TARGET_ADAPTER_NAME samm
 ENV TARGET_ADAPTER_PATH /usr/local/bin/$TARGET_ADAPTER_NAME
 
-ENV TARGET_BRIDGE_NAME microservice-bridge-mqtt
+ENV TARGET_BRIDGE_NAME sammbridge
 ENV TARGET_BRIDGE_PATH /usr/local/bin/$TARGET_BRIDGE_NAME
 
 COPY src /mqtt-adapter/src
@@ -28,14 +28,16 @@ FROM alpine:3.8
 
 ENV SERVICE_NAME=test-echo
 ENV SERVICE_PROCESSOR=/srv/processor
+ENV NAMESPACE_PUBLISHER=default
+ENV NAMESPACE_LISTENER=default
 ENV SUBSCRIPTIONS=/srv/subscriptions.txt
 
 RUN apk add --no-cache bash jq gettext util-linux coreutils
 
-COPY --from=builder /usr/local/bin/microservice-adapter-mqtt /usr/local/bin/microservice-adapter-mqtt
-COPY --from=builder /usr/local/bin/microservice-bridge-mqtt /usr/local/bin/microservice-bridge-mqtt
+COPY --from=builder /usr/local/bin/samm /usr/local/bin/samm
+COPY --from=builder /usr/local/bin/sammbridge /usr/local/bin/sammbridge
 
 WORKDIR /srv/
 COPY examples/test-echo/. /srv/.
 
-CMD ["microservice-adapter-mqtt"]
+CMD ["samm"]

@@ -1,7 +1,7 @@
 # This docker-compose.yml is for demonstration purposes. If you run
 # docker-compose build && docker-compose up, you will have a local mosquitto
 # mqtt server running and a ticker microservice, which is using the
-# microservice-adapter-mqtt connected to it, publishing a tick message every
+# samm connected to it, publishing a tick message every
 # 3 seconds with topic default/tick. You can e.g. use mqtt-spy to monitor these
 # messages.
 version: '3'
@@ -16,11 +16,11 @@ services:
     volumes:
       - "./examples/conf.d/mosquitto.conf:/mosquitto/config/mosquitto.conf"
     restart: always
-  microservice-adapter-mqtt:
+  samm:
     depends_on:
       - mqtt
     build: .
-    image: flaneurtv/microservice-adapter-mqtt
+    image: flaneurtv/samm
     environment:
       - "LOG_LEVEL=debug"
       - "LOG_LEVEL_MQTT=debug"
@@ -35,10 +35,10 @@ services:
       - ./examples/test-echo/:/srv/
   test-sender:
     depends_on:
-      - microservice-adapter-mqtt
+      - samm
       - mqtt
     build: ./examples/test-sender
-    image: flaneurtv/microservice-test-sender
+    image: flaneurtv/samm-test-sender
     environment:
 #      - "SUBSCRIPTIONS="
       - "LOG_LEVEL=debug"

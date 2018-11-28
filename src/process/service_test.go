@@ -3,8 +3,8 @@ package process_test
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/logger"
-	"gitlab.com/flaneurtv/microservice-adapter-mqtt/core/process"
+	"gitlab.com/flaneurtv/samm/core/logger"
+	"gitlab.com/flaneurtv/samm/core/process"
 	"io/ioutil"
 	"os"
 	"strings"
