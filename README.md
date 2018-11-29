@@ -1,4 +1,4 @@
-samm# SAMM - Service Adapter for MQTT Microservices #
+# SAMM - Service Adapter for MQTT Microservices #
 
 SAMM is a building block for creating MQTT enabled microservices. SAMM connects to an MQTT message bus, subscribes to your topics and forwards the received messages to your custom processors stdin in JSON - one message == one line. If your processor wants to emit a message, you only need to write a JSON line to stdout.
 
